@@ -199,6 +199,39 @@ export class EscrowComponent implements OnInit {
       .catch(function (error) {
         console.error('Something went wrong!', error);
       });
-  }  
+  }
+
+  fundEscrow() {
+    console.log('Funding Escrow ... ');
+    StellarSdk.Network.useTestNetwork();
+    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+    const sourceKeys = StellarSdk.Keypair.fromSecret(this.srcAccount.privateKey);
+
+    server.loadAccount(this.srcAccount.publicKey)
+      .catch((error) => {
+        console.error(error);
+        throw new Error('The source account does not exist!');
+      })
+      .then((source) => {
+        // Start building the transaction.
+        let transaction = new StellarSdk.TransactionBuilder(source)
+          .addOperation(StellarSdk.Operation.payment({
+            destination: this.escrowAccount.publicKey,
+            asset: StellarSdk.Asset.native(),
+            amount: this.premiumAmount
+          }))
+          .addMemo(StellarSdk.Memo.text('Test Transaction'))
+          .build();
+        transaction.sign(sourceKeys);
+        return server.submitTransaction(transaction);
+      })
+      .then(function (result) {
+        console.log('Success! Results:', result);
+        console.log('Escrow Funded ');
+      })
+      .catch(function (error) {
+        console.error('Something went wrong!', error);
+      });
+  }
 
 }
