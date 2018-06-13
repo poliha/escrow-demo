@@ -116,5 +116,44 @@ export class EscrowComponent implements OnInit {
       });
   }
 
+  buildUnlockTransaction() {
+    console.log('7. building unlock transaction ... ');
+    StellarSdk.Network.useTestNetwork();
+    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+    const escrowSourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
+    const destSourceKeys = StellarSdk.Keypair.fromSecret(this.destAccount.privateKey);
 
+    server.loadAccount(this.escrowAccount.publicKey)
+      .catch((error) => {
+        console.error(error);
+        throw new Error('The escrow account does not exist!');
+      })
+      .then((source) => {
+        // Start building the transaction.
+        let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.minimumTime, maxTime: this.maximumTime } })
+          .addOperation(StellarSdk.Operation.setOptions({
+            masterWeight: 0,
+            lowThreshold: 1,
+            medThreshold: 1,
+            highThreshold: 1
+          }))
+          .addMemo(StellarSdk.Memo.text('Test Transaction'));
+
+        // build and sign transaction
+        // sign transactions by both escrow and destination
+        // IDEA: maybe split the signing into two seperate events to depict how
+        // this might be signed when you dont have access to the keys of both account.
+        // i.e. convert to XDR during intermediate signing events.
+        let builtTx = transaction.build();
+        builtTx.sign(escrowSourceKeys, destSourceKeys);
+        this.unlockXDR = builtTx.toEnvelope().toXDR().toString('base64');
+
+      })
+      .then(function () {
+        console.log('8. Unlock transaction built');
+      })
+      .catch(function (error) {
+        console.error('Something went wrong!', error);
+      });
+  }
 }
