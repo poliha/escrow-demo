@@ -156,4 +156,49 @@ export class EscrowComponent implements OnInit {
         console.error('Something went wrong!', error);
       });
   }
+
+  buildRecoveryTransaction() {
+    console.log('9. building recovery transaction ... ');
+    StellarSdk.Network.useTestNetwork();
+    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+    const escrowSourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
+    const destSourceKeys = StellarSdk.Keypair.fromSecret(this.destAccount.privateKey);
+
+    server.loadAccount(this.escrowAccount.publicKey)
+      .catch((error) => {
+        console.error(error);
+        throw new Error('The escrow account does not exist!');
+      })
+      .then((source) => {
+        // Start building the transaction.
+        let transaction = new StellarSdk.TransactionBuilder(source, {
+          timebounds: { minTime: this.minimumTime, maxTime: this.maximumTime }
+        })
+          .addOperation(StellarSdk.Operation.setOptions({
+            masterWeight: 1, // might not be necessary, weight is already 1
+            lowThreshold: 1,
+            medThreshold: 1,
+            highThreshold: 1,
+            signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 0 }
+          }))
+          .addMemo(StellarSdk.Memo.text('Test Transaction'));
+
+        // build and sign transaction
+        // sign transactions by both escrow and destination
+        // IDEA: maybe split the signing into two seperate events to depict how
+        // this might be signed when you dont have access to the keys of both account.
+        // i.e. convert to XDR during intermediate signing events.
+        let builtTx = transaction.build();
+        builtTx.sign(escrowSourceKeys, destSourceKeys);
+        this.recoveryXDR = builtTx.toEnvelope().toXDR().toString('base64');
+
+      })
+      .then(function () {
+        console.log('8. Recovery transaction built');
+      })
+      .catch(function (error) {
+        console.error('Something went wrong!', error);
+      });
+  }  
+
 }
