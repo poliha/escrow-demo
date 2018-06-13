@@ -80,4 +80,41 @@ export class EscrowComponent implements OnInit {
         console.error('Something went wrong!', error);
       });
   }
+
+  multisigEnable() {
+    console.log('5. Enabling Multisig ... ');
+    StellarSdk.Network.useTestNetwork();
+    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+    const sourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
+
+    server.loadAccount(this.escrowAccount.publicKey)
+      .catch((error) => {
+        console.error(error);
+        throw new Error('The escrow account does not exist!');
+      })
+      .then((source) => {
+        // Start building the transaction.
+        let transaction = new StellarSdk.TransactionBuilder(source)
+          .addOperation(StellarSdk.Operation.setOptions({
+            masterWeight: 1,
+            lowThreshold: 2,
+            medThreshold: 2,
+            highThreshold: 2,
+            signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 1 }
+          }))
+          .addMemo(StellarSdk.Memo.text('Test Transaction'))
+          .build();
+        transaction.sign(sourceKeys);
+        return server.submitTransaction(transaction);
+      })
+      .then(function (result) {
+        console.log('Success! Results:', result);
+        console.log('6. Multisig Enabled ');
+      })
+      .catch(function (error) {
+        console.error('Something went wrong!', error);
+      });
+  }
+
+
 }
