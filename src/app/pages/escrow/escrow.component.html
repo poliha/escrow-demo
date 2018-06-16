@@ -1,3 +1,98 @@
-<p>
-  escrow works!
-</p>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-3">
+      <h4>Demo Control</h4>
+      <label>Starting Balance: {{startingBalance}}</label>
+      <label>Escrow Balance: {{escrowStartingBalance}}</label>
+      <label>Escrow Amount: {{escrowAmount}}</label>
+
+      <form class="form-inline" (ngSubmit)="startDemo()" #heroForm="ngForm">
+        <label>Unlock After (sec)</label>
+        <input type="text" class="form-control mb-2 mr-sm-2" placeholder="Unlock Period in Seconds" [(ngModel)]="unlockAfter" name="unlockAfter"
+          ngModel>
+<label>Recover After (sec)</label>
+        <input type="text" class="form-control mb-2 mr-sm-2" placeholder="Recovery Period in Seconds" [(ngModel)]="recoverAfter"
+          name="recoverAfter" ngModel>
+
+
+        <button type="submit" class="btn btn-primary mb-2">Start Contract</button>
+      </form>
+
+      <h5>Tasks</h5>
+<div class="list-group">
+  <button type="button" class="list-group-item list-group-item-action" (click)="generateAll()" >
+    Generate Keypairs 
+    <img *ngIf="tasks.generateKeypairs.active" src="assets/loader.gif">
+<span *ngIf="tasks.generateKeypairs.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.generateKeypairs.status, 'badge-danger':!tasks.generateKeypairs.status}">
+      {{ tasks.generateKeypairs.status ? 'Complete' : 'Error' }}
+    </span>
+  </button>
+  <button type="button" class="list-group-item list-group-item-action" (click)="createAccounts()" >Create Accounts
+<img *ngIf="tasks.createAccounts.active" src="assets/loader.gif">
+<span *ngIf="tasks.createAccounts.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.createAccounts.status, 'badge-danger':!tasks.createAccounts.status}">
+ {{ tasks.createAccounts.status ? 'Complete' : 'Error' }}
+</span>
+
+  </button>
+  <button type="button" class="list-group-item list-group-item-action" (click)="enableMultisig()" >Enable Multisig
+<img *ngIf="tasks.enableMultisig.active" src="assets/loader.gif">
+<span *ngIf="tasks.enableMultisig.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.enableMultisig.status, 'badge-danger':!tasks.enableMultisig.status}">
+ {{ tasks.enableMultisig.status ? 'Complete' : 'Error' }}
+</span>
+  </button>
+<button type="button" class="list-group-item list-group-item-action" (click)="buildUnlockTransaction()">Build Unlock Transaction
+<img *ngIf="tasks.buildUnlock.active" src="assets/loader.gif">
+<span *ngIf="tasks.buildUnlock.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.buildUnlock.status, 'badge-danger':!tasks.buildUnlock.status}">
+ {{ tasks.buildUnlock.status ? 'Complete' : 'Error' }}
+</span>
+
+  </button>
+<button type="button" class="list-group-item list-group-item-action" (click)="buildRecoveryTransaction()">Build Recovery Transaction
+<img *ngIf="tasks.buildRecovery.active" src="assets/loader.gif">
+<span *ngIf="tasks.buildRecovery.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.buildRecovery.status, 'badge-danger':!tasks.buildRecovery.status}">
+ {{ tasks.buildRecovery.status ? 'Complete' : 'Error' }}
+</span>
+</button>
+  <button type="button" class="list-group-item list-group-item-action" (click)="fundEscrow()" disabled>Fund Escrow
+<img *ngIf="tasks.fundEscrow.active" src="assets/loader.gif">
+<span *ngIf="tasks.fundEscrow.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.fundEscrow.status, 'badge-danger':!tasks.fundEscrow.status}">
+  {{ tasks.fundEscrow.status ? 'Complete' : 'Error' }}
+</span>
+  </button>
+<button type="button" class="list-group-item list-group-item-action" (click)="runUnlockTx()" disabled>Unlock Funds
+<img *ngIf="tasks.runUnlock.active" src="assets/loader.gif">
+<span *ngIf="tasks.runUnlock.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.runUnlock.status, 'badge-danger':!tasks.runUnlock.status}">
+ {{ tasks.runUnlock.status ? 'Complete' : 'Error' }}
+</span>
+
+</button>
+<button type="button" class="list-group-item list-group-item-action" (click)="runRecoveryTx()" disabled>Recover Funds
+<img *ngIf="tasks.runRecovery.active" src="assets/loader.gif">
+<span *ngIf="tasks.runRecovery.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.runRecovery.status, 'badge-danger':!tasks.runRecovery.status}">
+ {{ tasks.runRecovery.status ? 'Complete' : 'Error' }}
+</span>
+</button>
+</div>
+
+      <h6>Logs</h6> <img *ngIf="showLoader" src="assets/loader.gif">
+      <ul class="list-group">
+        <li class="list-group-item" *ngFor="let item of logs; let i = index">
+          {{ i + 1 }} - {{ item }}
+        </li>
+      </ul>
+
+    </div>
+    <div class="col-sm-3">
+      <h6>SOURCE ACCOUNT</h6>
+      <app-account-detail [publicKey]="srcAccount.publicKey"></app-account-detail>
+    </div>
+    <div class="col-sm-3">
+      <h6>ESCROW ACCOUNT</h6>
+      <app-account-detail [publicKey]="escrowAccount.publicKey"></app-account-detail>
+    </div>
+    <div class="col-sm-3">
+      <h6>TARGET ACCOUNT</h6>
+      <app-account-detail [publicKey]="destAccount.publicKey"></app-account-detail>
+    </div>
+  </div>
+</div>

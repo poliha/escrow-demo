@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import * as StellarSdk from 'stellar-sdk';
+import * as moment from 'moment';
+import { delay } from 'q';
 
 @Component({
   selector: 'app-escrow',
@@ -7,53 +9,96 @@ import * as StellarSdk from 'stellar-sdk';
   styleUrls: ['./escrow.component.css']
 })
 export class EscrowComponent implements OnInit {
-
-  originAccount: { publicKey: string, privateKey: string };
-  srcAccount: {publicKey: string, privateKey: string};
-  destAccount: { publicKey: string, privateKey: string };
-  escrowAccount: { publicKey: string, privateKey: string };
+  logs = [];
+  originAccount: { publicKey: string, privateKey: string } = {
+    publicKey: '',
+    privateKey: ''
+  };
+  srcAccount: { publicKey: string, privateKey: string } = {
+    publicKey: '',
+    privateKey: ''
+  };
+  destAccount: { publicKey: string, privateKey: string } = {
+    publicKey: '',
+    privateKey: ''
+  };
+  escrowAccount: { publicKey: string, privateKey: string } = {
+    publicKey: '',
+    privateKey: ''
+  };
   startingBalance = '10';
-  premiumAmount =  '50';
+  premiumAmount = '1';
   minimumTime = 0;
   maximumTime = 0;
+  unlockAfter = 10;
+  recoverAfter = 30;
   unlockXDR = '';
   recoveryXDR = '';
+  unlockInterval: any;
+  recoveryInterval: any;
+  currentTime: any;
+  showLoader = false;
+  taskStatus = false;
+  tasks = {
+    generateKeypairs: { active: false, status: false, completed: false },
+    createAccounts: { active: false, status: false, completed: false },
+    enableMultisig: { active: false, status: false, completed: false },
+    buildUnlock: { active: false, status: false, completed: false },
+    buildRecovery: { active: false, status: false, completed: false },
+    fundEscrow: { active: false, status: false, completed: false },
+    runUnlock: { active: false, status: false, completed: false },
+    runRecovery: { active: false, status: false, completed: false },
+  };
+
 
   constructor() {
-    this.originAccount = { publicKey: '', privateKey: '' };
-   }
-
-  ngOnInit() {
+    this.originAccount = {
+      publicKey: 'GBZHC2HO35PLTAB4VCCKNSRONUONQVJ3TTVAT5QI3NZWP2MXCHE22QNA',
+      privateKey: 'SC4AIUZ2N6E3ACB4O3BALXKI4C2FBSCYOY3VSGFBHKVIVGKPJD7ACYU3'
+    };
 
   }
 
-  generateAccount() {
-    const pair = StellarSdk.Keypair.random();
-    return { publicKey: pair.publicKey(), privateKey: pair.secret() };
-  }
+  ngOnInit() { }
 
-  startDemo() {
-    console.log('1. Generate Keypairs ...');
-    this.srcAccount = this.generateAccount();
-    this.destAccount = this.generateAccount();
-    this.escrowAccount = this.generateAccount();
-    console.log('2. Keypairs Generated');
+  async generateAll() {
+    try {
+      this.logs.push('Generate Keypairs ...');
+      this.tasks.generateKeypairs.active = true;
+      // add a little delay :)
+      await this.addDelay(5000);
 
+      this.srcAccount = this.generateAccount();
+      this.destAccount = this.generateAccount();
+      this.escrowAccount = this.generateAccount();
+
+      this.logs.push('Keypairs Generated');
+      this.tasks.generateKeypairs.status = true;
+      this.tasks.generateKeypairs.active = false;
+      this.tasks.generateKeypairs.completed = true;
+    } catch (error) {
+      this.tasks.generateKeypairs.status = false;
+      this.tasks.generateKeypairs.active = false;
+      this.tasks.generateKeypairs.completed = true;
+    }
   }
 
   createAccounts() {
-    console.log('3. Creating accounts ... ');
+    this.logs.push('Create accounts');
+    this.tasks.createAccounts.active = true;
+
     StellarSdk.Network.useTestNetwork();
     const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
     const sourceKeys = StellarSdk.Keypair.fromSecret(this.originAccount.privateKey);
 
-    server.loadAccount(this.originAccount.publicKey)
+    return server.loadAccount(this.originAccount.publicKey)
       .catch((error) => {
         console.error(error);
         throw new Error('The origin account does not exist!');
       })
       .then((source) => {
         // Start building the transaction.
+        // to do use different starting balances
         let transaction = new StellarSdk.TransactionBuilder(source)
           .addOperation(StellarSdk.Operation.createAccount({
             destination: this.srcAccount.publicKey,
@@ -72,166 +117,432 @@ export class EscrowComponent implements OnInit {
         transaction.sign(sourceKeys);
         return server.submitTransaction(transaction);
       })
-      .then(function (result) {
+      .then((result) => {
         console.log('Success! Results:', result);
         console.log('4. Accounts created ');
+        this.tasks.createAccounts.active = false;
+        this.tasks.createAccounts.completed = true;
+        this.tasks.createAccounts.status = true;
+        this.logs.push('Create accounts success');
+        return Promise.resolve('Success');
       })
-      .catch(function (error) {
+      .catch((error) => {
         console.error('Something went wrong!', error);
+        this.tasks.createAccounts.active = false;
+        this.tasks.createAccounts.completed = true;
+        this.tasks.createAccounts.status = false;
+        return Promise.reject(error);
       });
   }
 
-  multisigEnable() {
-    console.log('5. Enabling Multisig ... ');
-    StellarSdk.Network.useTestNetwork();
-    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
-    const sourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
+  enableMultisig() {
 
-    server.loadAccount(this.escrowAccount.publicKey)
-      .catch((error) => {
-        console.error(error);
-        throw new Error('The escrow account does not exist!');
-      })
-      .then((source) => {
-        // Start building the transaction.
-        let transaction = new StellarSdk.TransactionBuilder(source)
-          .addOperation(StellarSdk.Operation.setOptions({
-            masterWeight: 1,
-            lowThreshold: 2,
-            medThreshold: 2,
-            highThreshold: 2,
-            signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 1 }
-          }))
-          .addMemo(StellarSdk.Memo.text('Test Transaction'))
-          .build();
-        transaction.sign(sourceKeys);
-        return server.submitTransaction(transaction);
-      })
-      .then(function (result) {
-        console.log('Success! Results:', result);
-        console.log('6. Multisig Enabled ');
-      })
-      .catch(function (error) {
-        console.error('Something went wrong!', error);
-      });
+    try {
+      console.log('5. Enabling Multisig ... ');
+      this.logs.push('Enabling Multisig...');
+      this.tasks.enableMultisig.active = true;
+
+      StellarSdk.Network.useTestNetwork();
+      const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+      const sourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
+
+      return server.loadAccount(this.escrowAccount.publicKey)
+        .catch((error) => {
+          console.error(error);
+          throw new Error('The escrow account does not exist!');
+        })
+        .then((source) => {
+          // Start building the transaction.
+          let transaction = new StellarSdk.TransactionBuilder(source)
+            .addOperation(StellarSdk.Operation.setOptions({
+              masterWeight: 1,
+              lowThreshold: 2,
+              medThreshold: 2,
+              highThreshold: 2,
+              signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 1 }
+            }))
+            .addMemo(StellarSdk.Memo.text('Test Transaction'))
+            .build();
+          transaction.sign(sourceKeys);
+          return server.submitTransaction(transaction);
+        })
+        .then((result) => {
+          console.log('Success! Results:', result);
+          console.log('6. Multisig Enabled ');
+          this.tasks.enableMultisig.status = true;
+          this.tasks.enableMultisig.active = false;
+          this.tasks.enableMultisig.completed = true;
+          this.logs.push('Multisig enabled');
+          return Promise.resolve('success');
+        })
+        .catch((error) => {
+          console.error('Something went wrong!', error);
+          this.tasks.enableMultisig.status = false;
+          this.tasks.enableMultisig.active = false;
+          this.tasks.enableMultisig.completed = true;
+          return Promise.reject(error);
+        });
+    } catch (error) {
+      console.error('Something went wrong!', error);
+      this.tasks.enableMultisig.status = false;
+      this.tasks.enableMultisig.active = false;
+      this.tasks.enableMultisig.completed = true;
+    }
+
+
   }
 
   buildUnlockTransaction() {
-    console.log('7. building unlock transaction ... ');
-    StellarSdk.Network.useTestNetwork();
-    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
-    const escrowSourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
-    const destSourceKeys = StellarSdk.Keypair.fromSecret(this.destAccount.privateKey);
+    try {
+      console.log('7. building unlock transaction ... ');
+      this.logs.push('Building Unlock Transaction');
+      this.tasks.buildUnlock.active = true;
 
-    server.loadAccount(this.escrowAccount.publicKey)
-      .catch((error) => {
-        console.error(error);
-        throw new Error('The escrow account does not exist!');
-      })
-      .then((source) => {
-        // Start building the transaction.
-        let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.minimumTime, maxTime: this.maximumTime } })
-          .addOperation(StellarSdk.Operation.setOptions({
-            masterWeight: 0,
-            lowThreshold: 1,
-            medThreshold: 1,
-            highThreshold: 1
-          }))
-          .addMemo(StellarSdk.Memo.text('Test Transaction'));
+      StellarSdk.Network.useTestNetwork();
+      const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+      const escrowSourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
+      const destSourceKeys = StellarSdk.Keypair.fromSecret(this.destAccount.privateKey);
 
-        // build and sign transaction
-        // sign transactions by both escrow and destination
-        // IDEA: maybe split the signing into two seperate events to depict how
-        // this might be signed when you dont have access to the keys of both account.
-        // i.e. convert to XDR during intermediate signing events.
-        let builtTx = transaction.build();
-        builtTx.sign(escrowSourceKeys, destSourceKeys);
-        this.unlockXDR = builtTx.toEnvelope().toXDR().toString('base64');
+      return server.loadAccount(this.escrowAccount.publicKey)
+        .catch((error) => {
+          console.error(error);
+          throw new Error('The escrow account does not exist!');
+        })
+        .then((source) => {
+          this.currentTime = moment().unix();
+          console.log('CT: ', this.currentTime);
 
-      })
-      .then(function () {
-        console.log('8. Unlock transaction built');
-      })
-      .catch(function (error) {
-        console.error('Something went wrong!', error);
-      });
+          this.unlockAfter = this.currentTime + this.unlockAfter;
+          console.log('UT: ', this.unlockAfter);
+
+          // Start building the transaction.
+          let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.unlockAfter, maxTime: this.maximumTime } })
+            .addOperation(StellarSdk.Operation.setOptions({
+              masterWeight: 0,
+              lowThreshold: 1,
+              medThreshold: 1,
+              highThreshold: 1
+            }))
+            .addMemo(StellarSdk.Memo.text('Test Transaction'));
+
+          // build and sign transaction
+          // sign transactions by both escrow and destination
+          // IDEA: maybe split the signing into two seperate events to depict how
+          // this might be signed when you dont have access to the keys of both account.
+          // i.e. convert to XDR during intermediate signing events.
+          let builtTx = transaction.build();
+          builtTx.sign(escrowSourceKeys, destSourceKeys);
+          this.unlockXDR = builtTx.toEnvelope().toXDR().toString('base64');
+
+        })
+        .then(() => {
+          console.log('8. Unlock transaction built');
+          console.log('Unlock XDR', this.unlockXDR);
+          this.tasks.buildUnlock.status = true;
+          this.tasks.buildUnlock.active = false;
+          this.tasks.buildUnlock.completed = true;
+          this.logs.push('Building Unlock Transaction Successful');
+          return Promise.resolve('success');
+        })
+        .catch((error) => {
+          console.error('Something went wrong!', error);
+          this.tasks.buildUnlock.status = false;
+          this.tasks.buildUnlock.active = false;
+          this.tasks.buildUnlock.completed = true;
+          return Promise.reject(error);
+        });
+    } catch (error) {
+      console.error('Something went wrong!', error);
+      this.tasks.buildUnlock.status = false;
+      this.tasks.buildUnlock.active = false;
+      this.tasks.buildUnlock.completed = true;
+    }
+
   }
 
   buildRecoveryTransaction() {
-    console.log('9. building recovery transaction ... ');
-    StellarSdk.Network.useTestNetwork();
-    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
-    const escrowSourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
-    const destSourceKeys = StellarSdk.Keypair.fromSecret(this.destAccount.privateKey);
+    try {
+      console.log('9. building recovery transaction ... ');
+      this.logs.push('Building Recovery Transaction');
+      this.tasks.buildRecovery.active = true;
+      StellarSdk.Network.useTestNetwork();
+      const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+      const escrowSourceKeys = StellarSdk.Keypair.fromSecret(this.escrowAccount.privateKey);
+      const destSourceKeys = StellarSdk.Keypair.fromSecret(this.destAccount.privateKey);
 
-    server.loadAccount(this.escrowAccount.publicKey)
-      .catch((error) => {
-        console.error(error);
-        throw new Error('The escrow account does not exist!');
-      })
-      .then((source) => {
-        // Start building the transaction.
-        let transaction = new StellarSdk.TransactionBuilder(source, {
-          timebounds: { minTime: this.minimumTime, maxTime: this.maximumTime }
+      return server.loadAccount(this.escrowAccount.publicKey)
+        .catch((error) => {
+          console.error(error);
+          throw new Error('The escrow account does not exist!');
         })
-          .addOperation(StellarSdk.Operation.setOptions({
-            masterWeight: 1, // might not be necessary, weight is already 1
-            lowThreshold: 1,
-            medThreshold: 1,
-            highThreshold: 1,
-            signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 0 }
-          }))
-          .addMemo(StellarSdk.Memo.text('Test Transaction'));
+        .then((source) => {
+          this.currentTime = moment().unix();
+          console.log('CT: ', this.currentTime);
 
-        // build and sign transaction
-        // sign transactions by both escrow and destination
-        // IDEA: maybe split the signing into two seperate events to depict how
-        // this might be signed when you dont have access to the keys of both account.
-        // i.e. convert to XDR during intermediate signing events.
-        let builtTx = transaction.build();
-        builtTx.sign(escrowSourceKeys, destSourceKeys);
-        this.recoveryXDR = builtTx.toEnvelope().toXDR().toString('base64');
+          this.recoverAfter = this.currentTime + this.recoverAfter;
+          console.log('RT: ', this.recoverAfter);
 
-      })
-      .then(function () {
-        console.log('8. Recovery transaction built');
-      })
-      .catch(function (error) {
-        console.error('Something went wrong!', error);
-      });
+          // Start building the transaction.
+          let transaction = new StellarSdk.TransactionBuilder(source, {
+            timebounds: { minTime: this.recoverAfter, maxTime: this.maximumTime }
+          })
+            .addOperation(StellarSdk.Operation.setOptions({
+              masterWeight: 1, // might not be necessary, weight is already 1
+              lowThreshold: 1,
+              medThreshold: 1,
+              highThreshold: 1,
+              signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 0 }
+            }))
+            .addMemo(StellarSdk.Memo.text('Test Transaction'));
+
+          // build and sign transaction
+          // sign transactions by both escrow and destination
+          // IDEA: maybe split the signing into two seperate events to depict how
+          // this might be signed when you dont have access to the keys of both account.
+          // i.e. convert to XDR during intermediate signing events.
+          let builtTx = transaction.build();
+          builtTx.sign(escrowSourceKeys, destSourceKeys);
+          this.recoveryXDR = builtTx.toEnvelope().toXDR().toString('base64');
+
+        })
+        .then(() => {
+          console.log('8. Recovery transaction built');
+          console.log('Recovery XDR', this.recoveryXDR);
+          this.tasks.buildRecovery.status = true;
+          this.tasks.buildRecovery.active = false;
+          this.tasks.buildRecovery.completed = true;
+          this.logs.push('Building Recovery Transaction Success');
+          return Promise.resolve('success');
+        })
+        .catch((error) => {
+          console.error('Something went wrong!', error);
+          this.tasks.buildRecovery.status = false;
+          this.tasks.buildRecovery.active = false;
+          this.tasks.buildRecovery.completed = true;
+          return Promise.reject(error);
+        });
+    } catch (error) {
+      console.error('Something went wrong!', error);
+      this.tasks.buildRecovery.status = false;
+      this.tasks.buildRecovery.active = false;
+      this.tasks.buildRecovery.completed = true;
+
+    }
   }
 
   fundEscrow() {
-    console.log('Funding Escrow ... ');
+    try {
+      console.log('Funding Escrow ... ');
+      this.logs.push('Funding Escrow');
+      this.tasks.fundEscrow.active = true;
+      StellarSdk.Network.useTestNetwork();
+      const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+      const sourceKeys = StellarSdk.Keypair.fromSecret(this.srcAccount.privateKey);
+
+      return server.loadAccount(this.srcAccount.publicKey)
+        .catch((error) => {
+          console.error(error);
+          throw new Error('The source account does not exist!');
+        })
+        .then((source) => {
+          // Start building the transaction.
+          let transaction = new StellarSdk.TransactionBuilder(source)
+            .addOperation(StellarSdk.Operation.payment({
+              destination: this.escrowAccount.publicKey,
+              asset: StellarSdk.Asset.native(),
+              amount: this.premiumAmount
+            }))
+            .addMemo(StellarSdk.Memo.text('Test Transaction'))
+            .build();
+          transaction.sign(sourceKeys);
+          return server.submitTransaction(transaction);
+        })
+        .then((result) => {
+          console.log('Success! Results:', result);
+          console.log('Escrow Funded ');
+          this.tasks.fundEscrow.status = true;
+          this.tasks.fundEscrow.active = false;
+          this.tasks.fundEscrow.completed = true;
+          this.logs.push('Funding Escrow Success');
+          return Promise.resolve('success');
+        })
+        .catch((error) => {
+          console.error('Something went wrong!', error);
+          this.tasks.fundEscrow.status = false;
+          this.tasks.fundEscrow.active = false;
+          this.tasks.fundEscrow.completed = true;
+          return Promise.reject(error);
+        });
+    } catch (error) {
+      console.error('Something went wrong!', error);
+      this.tasks.fundEscrow.status = false;
+      this.tasks.fundEscrow.active = false;
+      this.tasks.fundEscrow.completed = true;
+    }
+
+  }
+
+  async runUnlockTx() {
+
+    try {
+      this.logs.push('Attempting to unlock funds');
+      this.tasks.runUnlock.active = true;
+
+      // check if unlock interval period is active,
+      if (moment().unix() >= this.unlockAfter) {
+        console.log('Starting unlock period ...');
+        this.logs.push('Unlock period started. Escrow funds can be released');
+        clearInterval(this.unlockInterval);
+        const tx = await this.runTx(this.unlockXDR);
+        if (!tx) {
+          throw new Error('Unable to unlock funds');
+        }
+        this.tasks.runUnlock.active = false;
+        this.tasks.runUnlock.completed = true;
+        this.tasks.runUnlock.status = true;
+        this.logs.push('Funds Unlocked');
+
+      } else {
+        this.logs.push('Unlock period in not yet active, cant claim funds');
+        this.tasks.runUnlock.active = false;
+        this.tasks.runUnlock.completed = true;
+        this.tasks.runUnlock.status = false;
+
+      }
+    } catch (error) {
+      this.tasks.runUnlock.active = false;
+      this.tasks.runUnlock.completed = true;
+      this.tasks.runUnlock.status = false;
+
+    }
+  }
+
+  async runRecoveryTx() {
+    try {
+      this.logs.push('Attempting to recover funds');
+      this.tasks.runRecovery.active = true;
+
+      if (moment().unix() >= this.recoverAfter) {
+        console.log('Starting recovery period ...');
+        this.logs.push('Recovery period started. Escrow funds can be recovered if unclaimed');
+        clearInterval(this.recoveryInterval);
+        const tx = await this.runTx(this.recoveryXDR);
+        if (!tx) {
+          throw new Error('Unable to recover funds');
+        }
+        this.tasks.runRecovery.active = false;
+        this.tasks.runRecovery.completed = true;
+        this.tasks.runRecovery.status = true;
+        this.logs.push('Funds Recovered');
+      } else {
+        this.logs.push('Recovery period in not yet active, cant claim funds');
+        this.tasks.runRecovery.active = false;
+        this.tasks.runRecovery.completed = true;
+        this.tasks.runRecovery.status = false;
+      }
+    } catch (error) {
+      this.tasks.runRecovery.active = false;
+      this.tasks.runRecovery.completed = true;
+      this.tasks.runRecovery.status = false;
+    }
+
+
+  }
+
+  runTx(xdrString) {
+    console.log('Submitting transaction ... ');
     StellarSdk.Network.useTestNetwork();
     const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
-    const sourceKeys = StellarSdk.Keypair.fromSecret(this.srcAccount.privateKey);
+    const transaction = new StellarSdk.Transaction(xdrString);
 
-    server.loadAccount(this.srcAccount.publicKey)
-      .catch((error) => {
-        console.error(error);
-        throw new Error('The source account does not exist!');
-      })
-      .then((source) => {
-        // Start building the transaction.
-        let transaction = new StellarSdk.TransactionBuilder(source)
-          .addOperation(StellarSdk.Operation.payment({
-            destination: this.escrowAccount.publicKey,
-            asset: StellarSdk.Asset.native(),
-            amount: this.premiumAmount
-          }))
-          .addMemo(StellarSdk.Memo.text('Test Transaction'))
-          .build();
-        transaction.sign(sourceKeys);
-        return server.submitTransaction(transaction);
-      })
+    // submit transaction to network
+    return server.submitTransaction(transaction)
       .then(function (result) {
         console.log('Success! Results:', result);
-        console.log('Escrow Funded ');
+        return Promise.resolve('success');
       })
       .catch(function (error) {
-        console.error('Something went wrong!', error);
+        console.log(error);
+        throw new Error('TxError');
+      })
+      .catch(function (error) {
+        console.error('Something went wrong at the end\n', error);
+        return Promise.reject(error)
       });
+  }
+
+  addDelay(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  generateAccount() {
+    const pair = StellarSdk.Keypair.random();
+    return { publicKey: pair.publicKey(), privateKey: pair.secret() };
+  }
+
+
+  async startDemo() {
+    // to do put in try-catch block
+    this.logs.push('Starting Demo');
+
+    this.logs.push('Generate Keypairs ...');
+
+    this.srcAccount = this.generateAccount();
+    this.destAccount = this.generateAccount();
+    this.escrowAccount = this.generateAccount();
+
+    this.logs.push('Keypairs Generated');
+    this.logs.push('Create accounts');
+
+    const createAccounts = await this.createAccounts();
+    if (!createAccounts) { }
+
+    this.logs.push(createAccounts);
+    this.logs.push('Enabling Multisig...');
+
+    const enableMultisig = await this.multisigEnable();
+    if (!enableMultisig) { }
+
+    this.logs.push(enableMultisig);
+    this.logs.push('Building Unlock Transaction');
+
+    const buildingUnlockTx = await this.buildUnlockTransaction();
+    if (!buildingUnlockTx) {
+
+    }
+
+    this.logs.push(buildingUnlockTx);
+    this.logs.push('Building Recovery Transaction');
+
+    const buildingRecoveryTx = await this.buildRecoveryTransaction();
+    if (!buildingRecoveryTx) {
+
+    }
+
+    this.logs.push(buildingRecoveryTx);
+    this.logs.push('Funding Escrow');
+
+
+    const funding = await this.fundEscrow();
+    if (!funding) {
+
+    }
+
+    this.logs.push(funding);
+
+    console.log('checking recovery status ...');
+
+    this.logs.push('Waiting for Unlock Period');
+    this.unlockInterval = setInterval(() => {
+      console.log('checking unlock status ...');
+      this.runUnlockTx();
+    }, 1000);
+
+    this.logs.push('Waiting for Recovery Period');
+    this.recoveryInterval = setInterval(() => {
+      console.log('checking recovery status ...');
+      this.runRecoveryTx();
+    }, 1000);
   }
 
 }
