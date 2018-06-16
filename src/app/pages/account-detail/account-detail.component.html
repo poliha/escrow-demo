@@ -1,0 +1,19 @@
+<div class="card" style="">
+<h5 *ngIf="publicKey" class="card-title">{{publicKey}}</h5>
+<div *ngIf="account" class="card-body">
+    <h5 class="card-title">Balances</h5>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item" *ngFor="let b of account.balances">
+        {{ b.balance }}
+      </li>
+    </ul>
+  </div>
+<div *ngIf="account" class="card-body">
+    <h5 class="card-title">Effects</h5>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item" *ngFor="let e of effects">
+        {{ e.type }}
+      </li>
+    </ul>
+  </div>
+</div>
