@@ -9,6 +9,7 @@ import * as StellarSdk from 'stellar-sdk';
 export class AccountDetailComponent implements OnInit {
 
   @Input() publicKey: string;
+  @Input() fedName: string;
 
   account: any;
   componentInterval: any;
@@ -17,13 +18,20 @@ export class AccountDetailComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+
+    if (this.publicKey == null || this.fedName == null) {
+     console.error('component not properly initialized');
+    }
+
     if (this.publicKey) {
       this.getAccount();
+      this.getEffects();
     }
     this.componentInterval = setInterval(() => {
       // console.log('checking account ...');
       if (this.publicKey) {
         this.getAccount();
+        this.getEffects();
       }
     }, 5000);
   }
@@ -35,16 +43,24 @@ export class AccountDetailComponent implements OnInit {
 
     server.accounts().accountId(this.publicKey).call()
       .then((account) => {
-        // console.log('account: ', account);
         this.account = account;
-        return server.effects().forAccount(this.publicKey).order('desc').limit(10).call();
-      }).catch(function (error) {
-        console.log('Error', error);
-        throw new Error('Account not found');
-      })
-      .then((effectResults) => {
-        // console.log(effectResults.records);
+      }).catch((error) => {
+        console.log('Account not found');
+        // set balances and signers to 0
+        this.account = {};
+        this.account.signers = [];
+        this.account.balances = [{balance: 0}];
 
+        // throw new Error('Account not found');
+      });
+
+  }
+
+  getEffects() {
+    StellarSdk.Network.useTestNetwork();
+    const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
+    server.effects().forAccount(this.publicKey).order('desc').limit(10).call()
+      .then((effectResults) => {
         this.effects = effectResults.records.map(record => {
           let returnObj = {};
           returnObj['account'] = record.account;
@@ -57,8 +73,10 @@ export class AccountDetailComponent implements OnInit {
 
       })
       .catch((err) => {
-        console.log(err);
+        console.log('Effects not found');
       });
   }
+
+
 
 }

@@ -10,35 +10,41 @@ import { delay } from 'q';
 })
 export class EscrowComponent implements OnInit {
   logs = [];
-  originAccount: { publicKey: string, privateKey: string } = {
+  originAccount: { publicKey: string, privateKey: string, fedName: string } = {
     publicKey: '',
-    privateKey: ''
+    privateKey: '',
+    fedName: 'origin*stellar.org'
   };
-  srcAccount: { publicKey: string, privateKey: string } = {
+  srcAccount: { publicKey: string, privateKey: string, fedName: string } = {
     publicKey: '',
-    privateKey: ''
+    privateKey: '',
+    fedName: 'source*stellar.org'
   };
-  destAccount: { publicKey: string, privateKey: string } = {
+  destAccount: { publicKey: string, privateKey: string, fedName: string } = {
     publicKey: '',
-    privateKey: ''
+    privateKey: '',
+    fedName: 'target*stellar.org'
   };
-  escrowAccount: { publicKey: string, privateKey: string } = {
+  escrowAccount: { publicKey: string, privateKey: string, fedName: string } = {
     publicKey: '',
-    privateKey: ''
+    privateKey: '',
+    fedName: 'escrow*stellar.org'
   };
-  startingBalance = '10';
-  premiumAmount = '1';
-  minimumTime = 0;
+  startingBalance = '100';
+  escrowAmount = '5';
+  escrowStartingBalance = '2.1';
+  totalSent = 0;
+  minimumUnlockTime = 0;
+  minimumRecoveryTime = 0;
   maximumTime = 0;
-  unlockAfter = 10;
-  recoverAfter = 30;
+  unlockAfter = 60;
+  recoverAfter = 100;
   unlockXDR = '';
   recoveryXDR = '';
   unlockInterval: any;
   recoveryInterval: any;
   currentTime: any;
-  showLoader = false;
-  taskStatus = false;
+
   tasks = {
     generateKeypairs: { active: false, status: false, completed: false },
     createAccounts: { active: false, status: false, completed: false },
@@ -54,23 +60,28 @@ export class EscrowComponent implements OnInit {
   constructor() {
     this.originAccount = {
       publicKey: 'GBZHC2HO35PLTAB4VCCKNSRONUONQVJ3TTVAT5QI3NZWP2MXCHE22QNA',
-      privateKey: 'SC4AIUZ2N6E3ACB4O3BALXKI4C2FBSCYOY3VSGFBHKVIVGKPJD7ACYU3'
+      privateKey: 'SC4AIUZ2N6E3ACB4O3BALXKI4C2FBSCYOY3VSGFBHKVIVGKPJD7ACYU3',
+      fedName: 'origin*stellar.org'
     };
 
   }
 
-  ngOnInit() { }
+  ngOnInit() {
+    this.currentTime = moment().unix();
+    this.minimumUnlockTime = this.currentTime + this.unlockAfter;
+    this.minimumRecoveryTime = this.currentTime + this.recoverAfter;
+   }
 
   async generateAll() {
     try {
       this.logs.push('Generate Keypairs ...');
       this.tasks.generateKeypairs.active = true;
       // add a little delay :)
-      await this.addDelay(5000);
+      await this.addDelay(3000);
 
-      this.srcAccount = this.generateAccount();
-      this.destAccount = this.generateAccount();
-      this.escrowAccount = this.generateAccount();
+      this.srcAccount = this.generateAccount('source');
+      this.destAccount = this.generateAccount('target');
+      this.escrowAccount = this.generateAccount('escrow');
 
       this.logs.push('Keypairs Generated');
       this.tasks.generateKeypairs.status = true;
@@ -110,7 +121,7 @@ export class EscrowComponent implements OnInit {
           }))
           .addOperation(StellarSdk.Operation.createAccount({
             destination: this.escrowAccount.publicKey,
-            startingBalance: this.startingBalance
+            startingBalance: this.escrowStartingBalance
           }))
           .addMemo(StellarSdk.Memo.text('Test Transaction'))
           .build();
@@ -192,6 +203,58 @@ export class EscrowComponent implements OnInit {
 
   }
 
+  async unlockProcess() {
+    try {
+
+      const buildUnlock = await this.buildUnlockTransaction();
+
+      if (!buildUnlock) {
+        throw new Error('unable to build unlock tx');
+      }
+
+      this.logs.push('Waiting for Unlock Period');
+      this.unlockInterval = setInterval(() => {
+        console.log('checking unlock status ...');
+        if (this.unlockAfter <= 0) {
+          this.unlockAfter = 0;
+          clearInterval(this.unlockInterval);
+        } else {
+          this.unlockAfter--;
+        }
+        // this.runUnlockTx();
+      }, 1000);
+
+    } catch (error) {
+      
+    }
+  }
+
+  async recoveryProcess() {
+    try {
+      const buildRecovery = await this.buildRecoveryTransaction();
+
+      if (!buildRecovery) {
+        throw new Error('unable to build recovery tx');
+      }
+      this.logs.push('Waiting for Recovery Period');
+      this.recoveryInterval = setInterval(() => {
+        console.log('checking recovery status ...');
+        if (this.recoverAfter <= 0) {
+          this.recoverAfter = 0;
+          clearInterval(this.recoveryInterval);
+        } else {
+          this.recoverAfter--;
+        }
+        // this.runRecoveryTx();
+      }, 1000);
+
+    } catch (error) {
+
+    }
+  }
+
+
+  
   buildUnlockTransaction() {
     try {
       console.log('7. building unlock transaction ... ');
@@ -212,16 +275,19 @@ export class EscrowComponent implements OnInit {
           this.currentTime = moment().unix();
           console.log('CT: ', this.currentTime);
 
-          this.unlockAfter = this.currentTime + this.unlockAfter;
-          console.log('UT: ', this.unlockAfter);
+          this.minimumUnlockTime = this.currentTime + this.unlockAfter;
+          console.log('UT: ', this.minimumUnlockTime);
 
           // Start building the transaction.
-          let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.unlockAfter, maxTime: this.maximumTime } })
+          let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.minimumUnlockTime, maxTime: this.maximumTime } })
             .addOperation(StellarSdk.Operation.setOptions({
               masterWeight: 0,
               lowThreshold: 1,
               medThreshold: 1,
               highThreshold: 1
+            }))
+            .addOperation(StellarSdk.Operation.accountMerge({
+              destination: this.destAccount.publicKey
             }))
             .addMemo(StellarSdk.Memo.text('Test Transaction'));
 
@@ -279,12 +345,12 @@ export class EscrowComponent implements OnInit {
           this.currentTime = moment().unix();
           console.log('CT: ', this.currentTime);
 
-          this.recoverAfter = this.currentTime + this.recoverAfter;
-          console.log('RT: ', this.recoverAfter);
+          this.minimumRecoveryTime = this.currentTime + this.recoverAfter;
+          console.log('RT: ', this.minimumRecoveryTime);
 
           // Start building the transaction.
           let transaction = new StellarSdk.TransactionBuilder(source, {
-            timebounds: { minTime: this.recoverAfter, maxTime: this.maximumTime }
+            timebounds: { minTime: this.minimumRecoveryTime, maxTime: this.maximumTime }
           })
             .addOperation(StellarSdk.Operation.setOptions({
               masterWeight: 1, // might not be necessary, weight is already 1
@@ -292,6 +358,9 @@ export class EscrowComponent implements OnInit {
               medThreshold: 1,
               highThreshold: 1,
               signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 0 }
+            }))
+            .addOperation(StellarSdk.Operation.accountMerge({
+              destination: this.srcAccount.publicKey
             }))
             .addMemo(StellarSdk.Memo.text('Test Transaction'));
 
@@ -350,7 +419,7 @@ export class EscrowComponent implements OnInit {
             .addOperation(StellarSdk.Operation.payment({
               destination: this.escrowAccount.publicKey,
               asset: StellarSdk.Asset.native(),
-              amount: this.premiumAmount
+              amount: this.escrowAmount
             }))
             .addMemo(StellarSdk.Memo.text('Test Transaction'))
             .build();
@@ -364,6 +433,7 @@ export class EscrowComponent implements OnInit {
           this.tasks.fundEscrow.active = false;
           this.tasks.fundEscrow.completed = true;
           this.logs.push('Funding Escrow Success');
+          this.totalSent = this.totalSent + Number(this.escrowAmount);
           return Promise.resolve('success');
         })
         .catch((error) => {
@@ -389,10 +459,10 @@ export class EscrowComponent implements OnInit {
       this.tasks.runUnlock.active = true;
 
       // check if unlock interval period is active,
-      if (moment().unix() >= this.unlockAfter) {
+      if (moment().unix() >= this.minimumUnlockTime) {
         console.log('Starting unlock period ...');
         this.logs.push('Unlock period started. Escrow funds can be released');
-        clearInterval(this.unlockInterval);
+        // clearInterval(this.unlockInterval);
         const tx = await this.runTx(this.unlockXDR);
         if (!tx) {
           throw new Error('Unable to unlock funds');
@@ -422,10 +492,10 @@ export class EscrowComponent implements OnInit {
       this.logs.push('Attempting to recover funds');
       this.tasks.runRecovery.active = true;
 
-      if (moment().unix() >= this.recoverAfter) {
+      if (moment().unix() >= this.minimumRecoveryTime) {
         console.log('Starting recovery period ...');
         this.logs.push('Recovery period started. Escrow funds can be recovered if unclaimed');
-        clearInterval(this.recoveryInterval);
+        // clearInterval(this.recoveryInterval);
         const tx = await this.runTx(this.recoveryXDR);
         if (!tx) {
           throw new Error('Unable to recover funds');
@@ -475,74 +545,10 @@ export class EscrowComponent implements OnInit {
     return new Promise(r => setTimeout(r, ms));
   }
 
-  generateAccount() {
+  generateAccount(fedName) {
     const pair = StellarSdk.Keypair.random();
-    return { publicKey: pair.publicKey(), privateKey: pair.secret() };
+    return { publicKey: pair.publicKey(), privateKey: pair.secret(), fedName: `${fedName}*stellar.org` };
   }
 
-
-  async startDemo() {
-    // to do put in try-catch block
-    this.logs.push('Starting Demo');
-
-    this.logs.push('Generate Keypairs ...');
-
-    this.srcAccount = this.generateAccount();
-    this.destAccount = this.generateAccount();
-    this.escrowAccount = this.generateAccount();
-
-    this.logs.push('Keypairs Generated');
-    this.logs.push('Create accounts');
-
-    const createAccounts = await this.createAccounts();
-    if (!createAccounts) { }
-
-    this.logs.push(createAccounts);
-    this.logs.push('Enabling Multisig...');
-
-    const enableMultisig = await this.multisigEnable();
-    if (!enableMultisig) { }
-
-    this.logs.push(enableMultisig);
-    this.logs.push('Building Unlock Transaction');
-
-    const buildingUnlockTx = await this.buildUnlockTransaction();
-    if (!buildingUnlockTx) {
-
-    }
-
-    this.logs.push(buildingUnlockTx);
-    this.logs.push('Building Recovery Transaction');
-
-    const buildingRecoveryTx = await this.buildRecoveryTransaction();
-    if (!buildingRecoveryTx) {
-
-    }
-
-    this.logs.push(buildingRecoveryTx);
-    this.logs.push('Funding Escrow');
-
-
-    const funding = await this.fundEscrow();
-    if (!funding) {
-
-    }
-
-    this.logs.push(funding);
-
-    console.log('checking recovery status ...');
-
-    this.logs.push('Waiting for Unlock Period');
-    this.unlockInterval = setInterval(() => {
-      console.log('checking unlock status ...');
-      this.runUnlockTx();
-    }, 1000);
-
-    this.logs.push('Waiting for Recovery Period');
-    this.recoveryInterval = setInterval(() => {
-      console.log('checking recovery status ...');
-      this.runRecoveryTx();
-    }, 1000);
-  }
 
 }

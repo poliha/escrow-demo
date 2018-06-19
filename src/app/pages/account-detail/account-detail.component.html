@@ -1,16 +1,22 @@
-<div class="card" style="">
-<h5 *ngIf="publicKey" class="card-title">{{publicKey}}</h5>
-<div *ngIf="account" class="card-body">
-    <h5 class="card-title">Balances</h5>
-    <ul class="list-group list-group-flush">
+<div class="card">
+  <h6 *ngIf="publicKey && fedName" class="card-title font-weight-bold text-secondary">{{fedName}}</h6>
+  <small *ngIf="publicKey && fedName">
+    <a href="https://stellar.expert/explorer/testnet/account/{{publicKey}}" target="_blank">{{publicKey}}</a>
+  </small>
+  <div *ngIf="account" class="card-body">
+    <ul class="list-group">
       <li class="list-group-item" *ngFor="let b of account.balances">
-        {{ b.balance }}
+        Balance: {{ b.balance }}
+      </li>
+      <li class="list-group-item" *ngFor="let b of account.balances">
+        Number of Signers: {{account.signers.length}}
       </li>
     </ul>
+
   </div>
-<div *ngIf="account" class="card-body">
-    <h5 class="card-title">Effects</h5>
-    <ul class="list-group list-group-flush">
+  <div *ngIf="account" class="card-body">
+    <h6 class="card-title">Actions on Account</h6>
+    <ul class="list-group">
       <li class="list-group-item" *ngFor="let e of effects">
         {{ e.type }}
       </li>
