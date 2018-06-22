@@ -109,7 +109,6 @@ export class EscrowComponent implements OnInit {
       })
       .then((source) => {
         // Start building the transaction.
-        // to do use different starting balances
         let transaction = new StellarSdk.TransactionBuilder(source)
           .addOperation(StellarSdk.Operation.createAccount({
             destination: this.srcAccount.publicKey,
@@ -221,7 +220,7 @@ export class EscrowComponent implements OnInit {
         } else {
           this.unlockAfter--;
         }
-        // this.runUnlockTx();
+        // this.runUnlockTx(); uncomment to run automatically when time elapsed
       }, 1000);
 
     } catch (error) {
@@ -253,11 +252,8 @@ export class EscrowComponent implements OnInit {
     }
   }
 
-
-  
   buildUnlockTransaction() {
     try {
-      console.log('7. building unlock transaction ... ');
       this.logs.push('Building Unlock Transaction');
       this.tasks.buildUnlock.active = true;
 
@@ -328,7 +324,6 @@ export class EscrowComponent implements OnInit {
 
   buildRecoveryTransaction() {
     try {
-      console.log('9. building recovery transaction ... ');
       this.logs.push('Building Recovery Transaction');
       this.tasks.buildRecovery.active = true;
       StellarSdk.Network.useTestNetwork();
@@ -401,7 +396,6 @@ export class EscrowComponent implements OnInit {
 
   fundEscrow() {
     try {
-      console.log('Funding Escrow ... ');
       this.logs.push('Funding Escrow');
       this.tasks.fundEscrow.active = true;
       StellarSdk.Network.useTestNetwork();
@@ -520,7 +514,6 @@ export class EscrowComponent implements OnInit {
   }
 
   runTx(xdrString) {
-    console.log('Submitting transaction ... ');
     StellarSdk.Network.useTestNetwork();
     const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
     const transaction = new StellarSdk.Transaction(xdrString);
