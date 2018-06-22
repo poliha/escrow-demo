@@ -37,8 +37,8 @@ export class EscrowComponent implements OnInit {
   minimumUnlockTime = 0;
   minimumRecoveryTime = 0;
   maximumTime = 0;
-  unlockAfter = 60;
-  recoverAfter = 100;
+  unlockAfter = 200;
+  recoverAfter = 300;
   unlockXDR = '';
   recoveryXDR = '';
   unlockInterval: any;

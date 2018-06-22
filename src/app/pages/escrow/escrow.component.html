@@ -1,22 +1,19 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-sm">
-      <h2>Unlock After: {{unlockAfter}}s </h2>
-    </div>
-    <div class="col-sm">
-      <h2>Recover After: {{recoverAfter}}s </h2>
-    </div>
-  </div>
-</div>
 <br>
 <hr>
+
 <div class="container-fluid">
   <div class="row">
-    <div class="col-sm-4" style="height: 300px; overflow-y: scroll;">
+    <div class="col-sm-3" style="height: 100vh; overflow-y: scroll;">
       <h4>Demo Control</h4>
-      <p>Starting Balance: {{startingBalance}}</p>
-      <p>Escrow Balance: {{escrowStartingBalance}}</p>
-      <p>Escrow Amount: {{escrowAmount}}</p>
+      <p>Starting Balance:
+        <strong>NGN {{ startingBalance | number:'1.2' }}</strong>
+      </p>
+      <p>Escrow Balance:
+        <strong>NGN {{escrowStartingBalance | number:'1.2'}} </strong>
+      </p>
+      <p>Escrow Amount:
+        <strong>NGN {{escrowAmount | number:'1.2'}}</strong>
+      </p>
 
       <form class="form-inline" #escrowForm="ngForm">
         <label>Unlock After (sec)</label>
@@ -28,10 +25,9 @@
 
 
         <!-- <button type="submit" class="btn btn-primary mb-2">Start Contract</button> -->
-      </form>
 
-    </div>
-    <div class="col-sm-4" style="height: 300px; overflow-y: scroll;">
+      </form>
+      <hr>
       <h5>Tasks</h5>
       <div class="list-group">
         <button type="button" class="list-group-item list-group-item-action" (click)="generateAll()">
@@ -78,6 +74,9 @@
           <span *ngIf="tasks.runUnlock.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.runUnlock.status, 'badge-danger':!tasks.runUnlock.status}">
             {{ tasks.runUnlock.status ? 'Complete' : 'Error' }}
           </span>
+          <span *ngIf="tasks.buildUnlock.completed" class="badge badge-pill badge-danger">
+            {{unlockAfter}}s
+          </span>
 
         </button>
         <button type="button" class="list-group-item list-group-item-action" (click)="runRecoveryTx()">Recover Funds
@@ -85,35 +84,32 @@
           <span *ngIf="tasks.runRecovery.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.runRecovery.status, 'badge-danger':!tasks.runRecovery.status}">
             {{ tasks.runRecovery.status ? 'Complete' : 'Error' }}
           </span>
+          <span *ngIf="tasks.buildRecovery.completed" class="badge badge-pill badge-danger">
+            {{recoverAfter}}s
+          </span>
         </button>
       </div>
-    </div>
-    <div class="col-sm-4" style="height: 300px; overflow-y: scroll;">
+
+      <hr>
       <h6>Logs</h6>
 
       <ul class="list-group">
-<li class="list-group-item" *ngFor="let item of logs.slice().reverse(); let i = index; first as isFirst" [ngClass]="{'isFirst': isFirst, 'isLast': !isFirst}">
+        <li class="list-group-item" *ngFor="let item of logs.slice().reverse(); let i = index; first as isFirst" [ngClass]="{'isFirst': isFirst, 'isLast': !isFirst}">
           {{ item }}
         </li>
       </ul>
 
     </div>
-  </div>
-</div>
-<br>
-<hr>
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-sm-4">
-      <h6>SOURCE ACCOUNT</h6>
+    <div class="col-sm-3">
+      <h4>Yemi's Account</h4>
       <app-account-detail [publicKey]="srcAccount.publicKey" [fedName]="srcAccount.fedName"></app-account-detail>
     </div>
-    <div class="col-sm-4">
-      <h6>ESCROW ACCOUNT</h6>
+    <div class="col-sm-3">
+      <h4>Escrow Account</h4>
       <app-account-detail [publicKey]="escrowAccount.publicKey" [fedName]="escrowAccount.fedName"></app-account-detail>
     </div>
-    <div class="col-sm-4">
-      <h6>TARGET ACCOUNT</h6>
+    <div class="col-sm-3">
+      <h4>Car Dealer Account</h4>
       <app-account-detail [publicKey]="destAccount.publicKey" [fedName]="destAccount.fedName"></app-account-detail>
     </div>
   </div>

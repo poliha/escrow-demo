@@ -3,10 +3,11 @@
   <small *ngIf="publicKey && fedName">
     <a href="https://stellar.expert/explorer/testnet/account/{{publicKey}}" target="_blank">{{publicKey}}</a>
   </small>
-  <div *ngIf="account" class="card-body">
+  <div *ngIf="account && publicKey" class="card-body">
     <ul class="list-group">
       <li class="list-group-item" *ngFor="let b of account.balances">
-        Balance: {{ b.balance }}
+        Balance:
+        <strong>NGN {{ b.balance | number:'1.2' }}</strong>
       </li>
       <li class="list-group-item" *ngFor="let b of account.balances">
         Number of Signers: {{account.signers.length}}
@@ -14,10 +15,10 @@
     </ul>
 
   </div>
-  <div *ngIf="account" class="card-body">
+  <div *ngIf="account && publicKey" class="card-body">
     <h6 class="card-title">Actions on Account</h6>
     <ul class="list-group">
-      <li class="list-group-item" *ngFor="let e of effects">
+<li class="list-group-item" *ngFor="let e of effects; first as isFirst" [ngClass]="{'isFirst bg-info': isFirst, 'isLast': !isFirst}">
         {{ e.type }}
       </li>
     </ul>

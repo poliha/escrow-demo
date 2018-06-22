@@ -1,0 +1,11 @@
+.isLast {
+  /* color: red; */
+  color: grey;
+}
+
+.isFirst {
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+
+}
