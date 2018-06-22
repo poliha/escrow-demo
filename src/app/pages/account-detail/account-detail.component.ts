@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, DoCheck } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import * as StellarSdk from 'stellar-sdk';
 
 @Component({
@@ -6,7 +6,7 @@ import * as StellarSdk from 'stellar-sdk';
   templateUrl: './account-detail.component.html',
   styleUrls: ['./account-detail.component.css']
 })
-export class AccountDetailComponent implements OnInit, DoCheck {
+export class AccountDetailComponent implements OnInit{
 
   @Input() publicKey: string;
   @Input() fedName: string;
@@ -14,20 +14,14 @@ export class AccountDetailComponent implements OnInit, DoCheck {
   account: any;
   componentInterval: any;
   effects = [];
-  // streamStarted = false;
 
-  constructor() { 
+  constructor() {
     this.account = {};
     this.account.signers = [];
     this.account.balances = [{ balance: 0 }];
   }
 
-  ngDoCheck() {
-    console.log('account', this.account);
-  }
-
   ngOnInit() {
-    
     if (this.publicKey == null || this.fedName == null) {
      console.error('component not properly initialized');
     }
@@ -52,10 +46,7 @@ export class AccountDetailComponent implements OnInit, DoCheck {
     server.accounts().accountId(this.publicKey).call()
       .then((account) => {
         this.account = account;
-        
-
       }).catch((error) => {
-        // console.log('Account not found');
         // set balances and signers to 0
         this.account = {};
         this.account.signers = [];
@@ -65,29 +56,9 @@ export class AccountDetailComponent implements OnInit, DoCheck {
   }
 
   getEffects() {
-    // if (this.streamStarted) {
-    //   return ;
-    // }
-
     StellarSdk.Network.useTestNetwork();
     const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
 
-    // this.streamStarted = true;
-    // server.effects().forAccount(this.publicKey).stream({
-    //   onmessage: (effect) => {
-    //     this.effects.push({
-    //       account: effect.account,
-    //       amount: effect.amount,
-    //       type: effect.type.replace('_', ' ')
-    //     });
-    //     console.log('New Effect received', this.effects);
-
-    //   },
-    //   onerror: (error) => {
-    //     console.log('effect error: ', error);
-    //   }
-    // });
-    
     server.effects().forAccount(this.publicKey).order('desc').limit(10).call()
       .then((effectResults) => {
         this.effects = effectResults.records.map(record => {
@@ -97,9 +68,6 @@ export class AccountDetailComponent implements OnInit, DoCheck {
           returnObj['type'] = record.type.replace('_', ' ');
           return returnObj;
         });
-
-        // console.log(this.effects);
-
       })
       .catch((err) => {
         // console.log('Effects not found');

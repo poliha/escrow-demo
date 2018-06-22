@@ -3,7 +3,7 @@
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-sm-3" style="height: 100vh; overflow-y: scroll;">
+    <div class="col-sm-3" style="height: 90vh; overflow-y: scroll;">
       <h4>Demo Control</h4>
       <p>Starting Balance:
         <strong>NGN {{ startingBalance | number:'1.2' }}</strong>
@@ -90,14 +90,14 @@
         </button>
       </div>
 
-      <hr>
+      <!-- <hr>
       <h6>Logs</h6>
 
       <ul class="list-group">
         <li class="list-group-item" *ngFor="let item of logs.slice().reverse(); let i = index; first as isFirst" [ngClass]="{'isFirst': isFirst, 'isLast': !isFirst}">
           {{ item }}
         </li>
-      </ul>
+      </ul> -->
 
     </div>
     <div class="col-sm-3">
@@ -114,3 +114,8 @@
     </div>
   </div>
 </div>
+<footer class="footer bg-info">
+<div class="container text-center">
+    <span class="text-white">Status: {{logs[logs.length-1]}}</span>
+  </div>
+</footer>
