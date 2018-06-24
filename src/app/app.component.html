@@ -13,13 +13,12 @@
   <div class="jumbotron">
     <div class="container">
       <h1 class="display-3">The Scenario!</h1>
-      <p>Car dealer sells Yemi a car for the amount of NGN2m under the condition that car dealer will return Yemi's funds if
-        the car develops issues after 3 days (Unlock period). Yemi does not completely trust car dealer, so she says she
-        will only pay the funds after 3 days.</p>
+      <p>Car dealer sells Tunde a car for the amount of NGN2m under the condition that car dealer will return Tunde's funds if
+        the car develops issues after 3 days (Unlock period). Tunde does not completely trust car dealer, so he says he will only pay the funds after 3 days.</p>
       <p> To solve this issue, they set up an escrow that will ensure that </p>
       <ul>
         <li>Funds will only be released after 3 days to car dealer.</li>
-        <li>Yemi can get her money back on the 4th day if there are any issues</li>
+        <li>Tunde can get his money back on the 4th day if there are any issues</li>
       </ul>
       <p>These can be achieved through a smart contract. Lets see how below</p>
       <p>
@@ -34,25 +33,34 @@
   <div class="jumbotron">
     <div class="container">
       <h1 class="display-3">How it Works!</h1>
-      <p>Next, we will see a demo that simulates this smart contract. The demo page consists of 4 vertical sections. The first, controls the demo and shows its tasks. The bottom bar gives the status of the accounts at each point in time.</p>
-      <p>
+      <p>Next, we will see a demo that simulates this smart contract. The demo page consists of 4 vertical sections. The first,
+        controls the demo and shows its tasks. The bottom bar gives the status of the accounts at each point in time.</p>
+      <h5>
         Things to Note:
-      </p>
+      </h5>
       <ul>
         <li>
-          <b>Starting balance:</b> This is the balance that the source and target accounts are created with</li>
+          <b>Starting balance:</b> This is the balance that the source(Tunde) and target(Car dealer) accounts are created with
+        </li>
         <li>
-          <b>Escrow Balance:</b> This is the balance that the escrow account is created with</li>
+          <b>Escrow Balance:</b> This is the balance that the escrow account is created with
+        </li>
         <li>
-          <b>Escrow Amount:</b> This is the amount that the source account funds the escrow account with</li>
+          <b>Escrow Amount:</b> This is the amount that the source account funds the escrow account with
+        </li>
         <li>
-          <b>Unlock After:</b> The amount of seconds before the funds in escrow can be unlocked for the target account</li>
+          <b>Unlock After:</b> The amount of seconds before the funds in escrow can be unlocked for the target account
+        </li>
         <li>
-          <b>Recover After:</b> The amount of seconds after which the funds in the escrow account is sent back to the source
-          account if it is unclaimed.</li>
+          <b>Recover After:</b> The amount of seconds after which the funds in the escrow account is sent back to the source account if it is unclaimed.
+        </li>
+        <li>
+          <b>Automate escrow release: </b> If selected, once the ulock period has elapsed, the funds are released
+        </li>
+
       </ul>
 
-      <p>Tasks</p>
+      <h5>Tasks</h5>
       <p>The following tasks will be performed</p>
       <ul>
 
@@ -75,6 +83,15 @@
           <b>Unlock Funds:</b> Run the unlock transaction built above</li>
         <li>
           <b>Recover Funds:</b> Run the recovery transaction built above</li>
+        <li>
+          <b>Raise Dispute:</b> Stop the smart contract if any issues, then:
+          <ul>
+            <li>
+              <b>Pay Tunde: </b> Refund the buyer</li>
+            <li>
+              <b>Pay Car dealer: </b> Release escrow funds to seller</li>
+          </ul>
+        </li>
 
       </ul>
       <p>

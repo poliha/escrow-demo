@@ -59,7 +59,7 @@ export class AccountDetailComponent implements OnInit{
     StellarSdk.Network.useTestNetwork();
     const server = new StellarSdk.Server('https://horizon-testnet.stellar.org');
 
-    server.effects().forAccount(this.publicKey).order('desc').limit(10).call()
+    server.effects().forAccount(this.publicKey).order('desc').limit(5).call()
       .then((effectResults) => {
         this.effects = effectResults.records.map(record => {
           let returnObj = {};

@@ -1,13 +1,13 @@
 <div class="card">
   <h6 *ngIf="publicKey && fedName" class="card-title font-weight-bold text-secondary">{{fedName}}</h6>
   <small *ngIf="publicKey && fedName">
-    <a href="https://stellar.expert/explorer/testnet/account/{{publicKey}}" target="_blank">{{publicKey}}</a>
+    <a href="#escrow">{{publicKey}}</a>
   </small>
   <div *ngIf="account && publicKey" class="card-body">
     <ul class="list-group">
       <li class="list-group-item" *ngFor="let b of account.balances">
         Balance:
-        <strong>NGN {{ b.balance | number:'1.2' }}</strong>
+        <strong>NGN {{ b.balance | number:'1.2' }}m</strong>
       </li>
       <li class="list-group-item" *ngFor="let b of account.balances">
         Number of Signers: {{account.signers.length}}

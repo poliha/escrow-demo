@@ -1,4 +1,4 @@
-<br>
+
 <hr>
 
 <div class="container-fluid">
@@ -6,13 +6,13 @@
     <div class="col-sm-3" style="height: 90vh; overflow-y: scroll;">
       <h4>Demo Control</h4>
       <p>Starting Balance:
-        <strong>NGN {{ startingBalance | number:'1.2' }}</strong>
+        <strong>NGN {{ startingBalance | number:'1.2' }}m</strong>
       </p>
       <p>Escrow Balance:
-        <strong>NGN {{escrowStartingBalance | number:'1.2'}} </strong>
+        <strong>NGN {{escrowStartingBalance | number:'1.2'}}m </strong>
       </p>
       <p>Escrow Amount:
-        <strong>NGN {{escrowAmount | number:'1.2'}}</strong>
+        <strong>NGN {{escrowAmount | number:'1.2'}}m</strong>
       </p>
 
       <form class="form-inline" #escrowForm="ngForm">
@@ -22,6 +22,10 @@
         <label>Recover After (sec)</label>
         <input type="text" class="form-control mb-2 mr-sm-2" placeholder="Recovery Period in Seconds" [(ngModel)]="recoverAfter"
           name="recoverAfter" ngModel>
+<div class="custom-control custom-checkbox">
+<input type="checkbox" class="custom-control-input" id="customCheck1" name="automateProcess" [(ngModel)]="automateProcess">
+  <label class="custom-control-label" for="customCheck1">Automate escrow release</label>
+</div>
 
 
         <!-- <button type="submit" class="btn btn-primary mb-2">Start Contract</button> -->
@@ -88,6 +92,24 @@
             {{recoverAfter}}s
           </span>
         </button>
+        <button type="button" class="list-group-item list-group-item-action" (click)="raiseDispute()">Raise Dispute
+          <img *ngIf="tasks.raiseDispute.active" src="assets/loader.gif">
+          <span *ngIf="tasks.raiseDispute.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.raiseDispute.status, 'badge-danger':!tasks.raiseDispute.status}">
+            {{ tasks.raiseDispute.status ? 'Complete' : 'Error' }}
+          </span>
+        </button>
+        <button *ngIf="tasks.raiseDispute.status" type="button" class="list-group-item list-group-item-action" (click)="paySource()">Pay Tunde
+          <img *ngIf="tasks.paySource.active" src="assets/loader.gif">
+          <span *ngIf="tasks.paySource.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.paySource.status, 'badge-danger':!tasks.paySource.status}">
+            {{ tasks.paySource.status ? 'Complete' : 'Error' }}
+          </span>
+        </button>
+        <button *ngIf="tasks.raiseDispute.status" type="button" class="list-group-item list-group-item-action" (click)="payTarget()">Pay Car Dealer
+          <img *ngIf="tasks.payTarget.active" src="assets/loader.gif">
+          <span *ngIf="tasks.payTarget.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.payTarget.status, 'badge-danger':!tasks.payTarget.status}">
+            {{ tasks.payTarget.status ? 'Complete' : 'Error' }}
+          </span>
+        </button>
       </div>
 
       <!-- <hr>
@@ -101,21 +123,24 @@
 
     </div>
     <div class="col-sm-3">
-      <h4>Yemi's Account</h4>
+      <br>
+      <h4>Tunde's Account</h4>
       <app-account-detail [publicKey]="srcAccount.publicKey" [fedName]="srcAccount.fedName"></app-account-detail>
     </div>
     <div class="col-sm-3">
+      <br>
       <h4>Escrow Account</h4>
       <app-account-detail [publicKey]="escrowAccount.publicKey" [fedName]="escrowAccount.fedName"></app-account-detail>
     </div>
     <div class="col-sm-3">
+      <br>
       <h4>Car Dealer Account</h4>
       <app-account-detail [publicKey]="destAccount.publicKey" [fedName]="destAccount.fedName"></app-account-detail>
     </div>
   </div>
 </div>
 <footer class="footer bg-info">
-<div class="container text-center">
+  <div class="container text-center">
     <span class="text-white">Status: {{logs[logs.length-1]}}</span>
   </div>
 </footer>
