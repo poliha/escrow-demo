@@ -1,7 +1,9 @@
 # EscrowDemo
 This demo displays how a multisig escrow smart contract can be implemented in stellar. It is the product of what is described in the developer docs: [2-Party Multisignature Escrow Account with Time Lock & Recovery](https://www.stellar.org/developers/guides/walkthroughs/stellar-smart-contracts.html#2-party-multisignature-escrow-account-with-time-lock-recovery) with some minor modification.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.8.
+
+
+[See Demo Here](https://poliha.github.io/escrow-demo/)
 
 ## How it works
 
