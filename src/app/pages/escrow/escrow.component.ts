@@ -88,8 +88,6 @@ export class EscrowComponent implements OnInit {
       this.destAccount = this.generateAccount('target');
       this.escrowAccount = this.generateAccount('escrow');
 
-      // console.log('S: ', this.srcAccount, 'D: ', this.destAccount, 'E: ',this.escrowAccount);
-
       this.logs.push('Keypairs Generated');
       this.tasks.generateKeypairs.status = true;
       this.tasks.generateKeypairs.active = false;
@@ -111,7 +109,6 @@ export class EscrowComponent implements OnInit {
 
     return server.loadAccount(this.originAccount.publicKey)
       .catch((error) => {
-        console.error(error);
         throw new Error('The origin account does not exist!');
       })
       .then((source) => {
@@ -127,7 +124,7 @@ export class EscrowComponent implements OnInit {
           }))
           .addOperation(StellarSdk.Operation.createAccount({
             destination: this.escrowAccount.publicKey,
-            startingBalance: this.escrowStartingBalance
+            startingBalance: this.startingBalance
           }))
           .addMemo(StellarSdk.Memo.text('Test Transaction'))
           .build();
@@ -135,8 +132,6 @@ export class EscrowComponent implements OnInit {
         return server.submitTransaction(transaction);
       })
       .then((result) => {
-        console.log('Success! Results:', result);
-        console.log('4. Accounts created ');
         this.tasks.createAccounts.active = false;
         this.tasks.createAccounts.completed = true;
         this.tasks.createAccounts.status = true;
@@ -144,7 +139,6 @@ export class EscrowComponent implements OnInit {
         return Promise.resolve('Success');
       })
       .catch((error) => {
-        console.error('Something went wrong!', error);
         this.tasks.createAccounts.active = false;
         this.tasks.createAccounts.completed = true;
         this.tasks.createAccounts.status = false;
@@ -164,7 +158,6 @@ export class EscrowComponent implements OnInit {
 
       return server.loadAccount(this.escrowAccount.publicKey)
         .catch((error) => {
-          console.error(error);
           throw new Error('The escrow account does not exist!');
         })
         .then((source) => {
@@ -187,8 +180,7 @@ export class EscrowComponent implements OnInit {
           return server.submitTransaction(transaction);
         })
         .then((result) => {
-          console.log('Success! Results:', result);
-          console.log('6. Multisig Enabled ');
+
           this.tasks.enableMultisig.status = true;
           this.tasks.enableMultisig.active = false;
           this.tasks.enableMultisig.completed = true;
@@ -196,14 +188,12 @@ export class EscrowComponent implements OnInit {
           return Promise.resolve('success');
         })
         .catch((error) => {
-          console.error('Something went wrong!', error);
           this.tasks.enableMultisig.status = false;
           this.tasks.enableMultisig.active = false;
           this.tasks.enableMultisig.completed = true;
           return Promise.reject(error);
         });
     } catch (error) {
-      console.error('Something went wrong!', error);
       this.tasks.enableMultisig.status = false;
       this.tasks.enableMultisig.active = false;
       this.tasks.enableMultisig.completed = true;
@@ -215,6 +205,16 @@ export class EscrowComponent implements OnInit {
   raiseDispute() {
 
     try {
+
+      if(this.tasks.runUnlock.completed && this.tasks.runUnlock.status){
+        alert('Funds already released. Please handle this manually');
+        return;
+      }
+
+      if (this.tasks.runRecovery.completed && this.tasks.runRecovery.status) {
+        alert('Funds already refunded. Please handle this manually');
+        return;
+      }
 
       if (!this.isFunded()) {
         this.logs.push('Escrow is not yet funded');
@@ -230,7 +230,7 @@ export class EscrowComponent implements OnInit {
 
       return server.loadAccount(this.escrowAccount.publicKey)
         .catch((error) => {
-          console.error(error);
+
           throw new Error('The escrow account does not exist!');
         })
         .then((source) => {
@@ -252,7 +252,6 @@ export class EscrowComponent implements OnInit {
           return server.submitTransaction(transaction);
         })
         .then((result) => {
-          console.log('Success! Results:', result);
           this.tasks.raiseDispute.status = true;
           this.tasks.raiseDispute.active = false;
           this.tasks.raiseDispute.completed = true;
@@ -260,14 +259,12 @@ export class EscrowComponent implements OnInit {
           return Promise.resolve('success');
         })
         .catch((error) => {
-          console.error('Something went wrong!', error);
           this.tasks.raiseDispute.status = false;
           this.tasks.raiseDispute.active = false;
           this.tasks.raiseDispute.completed = true;
           return Promise.reject(error);
         });
     } catch (error) {
-      console.error('Something went wrong!', error);
       this.tasks.raiseDispute.status = false;
       this.tasks.raiseDispute.active = false;
       this.tasks.raiseDispute.completed = true;
@@ -285,11 +282,10 @@ export class EscrowComponent implements OnInit {
 
       this.logs.push('Waiting for Unlock Period');
       this.unlockInterval = setInterval(() => {
-        console.log('checking unlock status ...');
         if (this.unlockAfter <= 0) {
           this.unlockAfter = 0;
           clearInterval(this.unlockInterval);
-          console.log('ap', this.automateProcess);
+
           if (this.automateProcess) {
             this.runUnlockTx();
           }
@@ -312,7 +308,7 @@ export class EscrowComponent implements OnInit {
       }
       this.logs.push('Waiting for Recovery Period');
       this.recoveryInterval = setInterval(() => {
-        console.log('checking recovery status ...');
+
         if (this.recoverAfter <= 0) {
           this.recoverAfter = 0;
           clearInterval(this.recoveryInterval);
@@ -342,15 +338,12 @@ export class EscrowComponent implements OnInit {
 
       return server.loadAccount(this.escrowAccount.publicKey)
         .catch((error) => {
-          console.error(error);
+
           throw new Error('The escrow account does not exist!');
         })
         .then((source) => {
           this.currentTime = moment().unix();
-          console.log('CT: ', this.currentTime);
-
           this.minimumUnlockTime = this.currentTime + Number(this.unlockAfter);
-          console.log('UT: ', this.minimumUnlockTime, this.unlockAfter);
 
           // Start building the transaction.
           let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.minimumUnlockTime, maxTime: this.maximumTime } })
@@ -370,17 +363,7 @@ export class EscrowComponent implements OnInit {
               signer: { ed25519PublicKey: this.srcAccount.publicKey, weight: 0 }
             }))
             .addMemo(StellarSdk.Memo.text('Test Transaction'));
-            // .addOperation(StellarSdk.Operation.setOptions({
-            //   masterWeight: 0,
-            //   lowThreshold: 1,
-            //   medThreshold: 1,
-            //   highThreshold: 1
-            // }))
-            // .addOperation(StellarSdk.Operation.accountMerge({
-            //   destination: this.destAccount.publicKey
-            // }))
-            // .addMemo(StellarSdk.Memo.text('Test Transaction'));
-
+           
           // build and sign transaction
           // sign transactions by both escrow and destination
           // IDEA: maybe split the signing into two seperate events to depict how
@@ -389,13 +372,12 @@ export class EscrowComponent implements OnInit {
           
           let builtTx = transaction.build();
           builtTx.sign(escrowSourceKeys, destSourceKeys);
-          // builtTx.sign(escrowSourceKeys);
+
           this.unlockXDR = builtTx.toEnvelope().toXDR().toString('base64');
 
         })
         .then(() => {
-          console.log('8. Unlock transaction built');
-          console.log('Unlock XDR', this.unlockXDR);
+
           this.tasks.buildUnlock.status = true;
           this.tasks.buildUnlock.active = false;
           this.tasks.buildUnlock.completed = true;
@@ -403,14 +385,13 @@ export class EscrowComponent implements OnInit {
           return Promise.resolve('success');
         })
         .catch((error) => {
-          console.error('Something went wrong!', error);
+
           this.tasks.buildUnlock.status = false;
           this.tasks.buildUnlock.active = false;
           this.tasks.buildUnlock.completed = true;
           return Promise.reject(error);
         });
     } catch (error) {
-      console.error('Something went wrong!', error);
       this.tasks.buildUnlock.status = false;
       this.tasks.buildUnlock.active = false;
       this.tasks.buildUnlock.completed = true;
@@ -429,15 +410,12 @@ export class EscrowComponent implements OnInit {
 
       return server.loadAccount(this.escrowAccount.publicKey)
         .catch((error) => {
-          console.error(error);
+
           throw new Error('The escrow account does not exist!');
         })
         .then((source) => {
           this.currentTime = moment().unix();
-          console.log('CT: ', this.currentTime);
-
           this.minimumRecoveryTime = this.currentTime + Number(this.recoverAfter);
-          console.log('RT: ', this.minimumRecoveryTime);
 
           // Start building the transaction.
           let transaction = new StellarSdk.TransactionBuilder(source, {
@@ -459,33 +437,19 @@ export class EscrowComponent implements OnInit {
               signer: { ed25519PublicKey: this.srcAccount.publicKey, weight: 0 }
             }))
             .addMemo(StellarSdk.Memo.text('Test Transaction'));
-            // .addOperation(StellarSdk.Operation.setOptions({
-            //   masterWeight: 1, // might not be necessary, weight is already 1
-            //   lowThreshold: 1,
-            //   medThreshold: 1,
-            //   highThreshold: 1,
-            //   signer: { ed25519PublicKey: this.destAccount.publicKey, weight: 0 }
-            // }))
-            // .addOperation(StellarSdk.Operation.accountMerge({
-            //   destination: this.srcAccount.publicKey
-            // }))
-            
-
+           
           // build and sign transaction
           // sign transactions by both escrow and destination
           // IDEA: maybe split the signing into two seperate events to depict how
           // this might be signed when you dont have access to the keys of both account.
           // i.e. convert to XDR during intermediate signing events.
-          let builtTx = transaction.build();
-          // builtTx.sign(escrowSourceKeys);
           
+          let builtTx = transaction.build();
           builtTx.sign(escrowSourceKeys, srcSourceKeys);
           this.recoveryXDR = builtTx.toEnvelope().toXDR().toString('base64');
 
         })
         .then(() => {
-          console.log('8. Recovery transaction built');
-          console.log('Recovery XDR', this.recoveryXDR);
           this.tasks.buildRecovery.status = true;
           this.tasks.buildRecovery.active = false;
           this.tasks.buildRecovery.completed = true;
@@ -493,7 +457,6 @@ export class EscrowComponent implements OnInit {
           return Promise.resolve('success');
         })
         .catch((error) => {
-          console.error('Something went wrong!', error);
           this.tasks.buildRecovery.status = false;
           this.tasks.buildRecovery.active = false;
           this.tasks.buildRecovery.completed = true;
@@ -524,7 +487,6 @@ export class EscrowComponent implements OnInit {
 
       return server.loadAccount(this.srcAccount.publicKey)
         .catch((error) => {
-          console.error(error);
           throw new Error('The source account does not exist!');
         })
         .then((source) => {
@@ -541,8 +503,6 @@ export class EscrowComponent implements OnInit {
           return server.submitTransaction(transaction);
         })
         .then((result) => {
-          console.log('Success! Results:', result);
-          console.log('Escrow Funded ');
           this.tasks.fundEscrow.status = true;
           this.tasks.fundEscrow.active = false;
           this.tasks.fundEscrow.completed = true;
@@ -551,7 +511,6 @@ export class EscrowComponent implements OnInit {
           return Promise.resolve('success');
         })
         .catch((error) => {
-          console.error('Something went wrong!', error);
           this.tasks.fundEscrow.status = false;
           this.tasks.fundEscrow.active = false;
           this.tasks.fundEscrow.completed = true;
@@ -580,7 +539,6 @@ export class EscrowComponent implements OnInit {
       await this.addDelay(2000);
       // check if unlock interval period is active,
       if (moment().unix() >= this.minimumUnlockTime) {
-        console.log('Starting unlock period ...');
         this.logs.push('Unlock period started. Escrow funds can be released');
         // clearInterval(this.unlockInterval);
         const tx = await this.runTx(this.unlockXDR);
@@ -618,9 +576,8 @@ export class EscrowComponent implements OnInit {
       this.tasks.runRecovery.active = true;
       await this.addDelay(2000);
       if (moment().unix() >= this.minimumRecoveryTime) {
-        console.log('Starting recovery period ...');
         this.logs.push('Recovery period started. Escrow funds can be recovered if unclaimed');
-        // clearInterval(this.recoveryInterval);
+
         const tx = await this.runTx(this.recoveryXDR);
         if (!tx) {
           throw new Error('Unable to recover funds');
@@ -652,15 +609,13 @@ export class EscrowComponent implements OnInit {
     // submit transaction to network
     return server.submitTransaction(transaction)
       .then(function (result) {
-        console.log('Success! Results:', result);
         return Promise.resolve('success');
       })
       .catch(function (error) {
-        console.log(error);
         throw new Error('TxError');
       })
       .catch(function (error) {
-        console.error('Something went wrong at the end\n', error);
+        console.error('Something went wrong at the end', error);
         return Promise.reject(error)
       });
   }
@@ -674,7 +629,6 @@ export class EscrowComponent implements OnInit {
 
       return server.loadAccount(this.escrowAccount.publicKey)
         .catch((error) => {
-          console.error(error);
           throw new Error('The source account does not exist!');
         })
         .then((source) => {
@@ -693,7 +647,7 @@ export class EscrowComponent implements OnInit {
           return Promise.resolve(builtTx.toEnvelope().toXDR().toString('base64'));
         })
         .catch((error) => {
-          console.error('Something went wrong!', error);
+
           return Promise.reject(error);
         });
     } catch (error) {
@@ -712,7 +666,6 @@ export class EscrowComponent implements OnInit {
         // clearInterval(this.recoveryInterval);
         const payXDR = await this.buildDisputePayment(this.srcAccount.publicKey);
 
-        console.log('payxdr', payXDR);
         if (!payXDR) {
           this.logs.push('Unable to build transaction');
           throw new Error('Unable to recover funds');
@@ -748,7 +701,6 @@ export class EscrowComponent implements OnInit {
         // clearInterval(this.recoveryInterval);
         const payXDR = await this.buildDisputePayment(this.destAccount.publicKey);
 
-        console.log('payxdr', payXDR);
         if (!payXDR) {
           this.logs.push('Unable to build transaction');
           throw new Error('Unable to recover funds');

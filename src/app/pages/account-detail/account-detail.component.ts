@@ -70,7 +70,7 @@ export class AccountDetailComponent implements OnInit{
         });
       })
       .catch((err) => {
-        // console.log('Effects not found');
+        console.log('Effects not found');
       });
   }
 

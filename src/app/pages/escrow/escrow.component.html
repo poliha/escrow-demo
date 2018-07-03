@@ -1,4 +1,3 @@
-
 <hr>
 
 <div class="container-fluid">
@@ -8,9 +7,9 @@
       <p>Starting Balance:
         <strong>NGN {{ startingBalance | number:'1.2' }}m</strong>
       </p>
-      <p>Escrow Balance:
+      <!-- <p>Escrow Balance:
         <strong>NGN {{escrowStartingBalance | number:'1.2'}}m </strong>
-      </p>
+      </p> -->
       <p>Escrow Amount:
         <strong>NGN {{escrowAmount | number:'1.2'}}m</strong>
       </p>
@@ -22,10 +21,10 @@
         <label>Recover After (sec)</label>
         <input type="text" class="form-control mb-2 mr-sm-2" placeholder="Recovery Period in Seconds" [(ngModel)]="recoverAfter"
           name="recoverAfter" ngModel>
-<div class="custom-control custom-checkbox">
-<input type="checkbox" class="custom-control-input" id="customCheck1" name="automateProcess" [(ngModel)]="automateProcess">
-  <label class="custom-control-label" for="customCheck1">Automate escrow release</label>
-</div>
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" class="custom-control-input" id="customCheck1" name="automateProcess" [(ngModel)]="automateProcess">
+          <label class="custom-control-label" for="customCheck1">Automate escrow release</label>
+        </div>
 
 
         <!-- <button type="submit" class="btn btn-primary mb-2">Start Contract</button> -->
@@ -48,20 +47,20 @@
           </span>
 
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="enableMultisig()">Enable Multisig
+        <button type="button" class="list-group-item list-group-item-action" (click)="enableMultisig()">Parties Sign
           <img *ngIf="tasks.enableMultisig.active" src="assets/loader.gif">
           <span *ngIf="tasks.enableMultisig.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.enableMultisig.status, 'badge-danger':!tasks.enableMultisig.status}">
             {{ tasks.enableMultisig.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="unlockProcess()">Build Unlock Transaction
+        <button type="button" class="list-group-item list-group-item-action" (click)="unlockProcess()">Start Hold Period
           <img *ngIf="tasks.buildUnlock.active" src="assets/loader.gif">
           <span *ngIf="tasks.buildUnlock.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.buildUnlock.status, 'badge-danger':!tasks.buildUnlock.status}">
             {{ tasks.buildUnlock.status ? 'Complete' : 'Error' }}
           </span>
 
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="recoveryProcess()">Build Recovery Transaction
+        <button type="button" class="list-group-item list-group-item-action" (click)="recoveryProcess()">Start Refund Period
           <img *ngIf="tasks.buildRecovery.active" src="assets/loader.gif">
           <span *ngIf="tasks.buildRecovery.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.buildRecovery.status, 'badge-danger':!tasks.buildRecovery.status}">
             {{ tasks.buildRecovery.status ? 'Complete' : 'Error' }}
@@ -98,13 +97,19 @@
             {{ tasks.raiseDispute.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button *ngIf="tasks.raiseDispute.status" type="button" class="list-group-item list-group-item-action" (click)="paySource()">Pay Tunde
+      </div>
+      <br>
+      <div class="list-group" *ngIf="tasks.raiseDispute.status">
+<h6 class="text-info">
+  <b>Tasks for Escrow Manager</b>
+</h6>
+        <button type="button" class="list-group-item list-group-item-action" (click)="paySource()">Pay Tunde
           <img *ngIf="tasks.paySource.active" src="assets/loader.gif">
           <span *ngIf="tasks.paySource.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.paySource.status, 'badge-danger':!tasks.paySource.status}">
             {{ tasks.paySource.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button *ngIf="tasks.raiseDispute.status" type="button" class="list-group-item list-group-item-action" (click)="payTarget()">Pay Car Dealer
+        <button type="button" class="list-group-item list-group-item-action" (click)="payTarget()">Pay Car Dealer
           <img *ngIf="tasks.payTarget.active" src="assets/loader.gif">
           <span *ngIf="tasks.payTarget.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.payTarget.status, 'badge-danger':!tasks.payTarget.status}">
             {{ tasks.payTarget.status ? 'Complete' : 'Error' }}
@@ -141,6 +146,6 @@
 </div>
 <footer class="footer bg-info">
   <div class="container text-center">
-    <span class="text-white">Status: {{logs[logs.length-1]}}</span>
+    <h5 class="text-white">Status: {{logs[logs.length-1]}}</h5>
   </div>
 </footer>
