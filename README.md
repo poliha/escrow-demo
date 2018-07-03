@@ -1,4 +1,4 @@
-# EscrowDemo
+# Escrow Demo
 This demo displays how a multisig escrow smart contract can be implemented in stellar. It is the product of what is described in the developer docs: [2-Party Multisignature Escrow Account with Time Lock & Recovery](https://www.stellar.org/developers/guides/walkthroughs/stellar-smart-contracts.html#2-party-multisignature-escrow-account-with-time-lock-recovery) with some minor modification.
 
 
@@ -34,6 +34,10 @@ Tasks below to be performed by escrow manager
 ### Logs
 At the bottom of the screen, this contains information about the status of each task. 
 
+### Things to note
+- Under the hood we are not really creating NGN tokens. XLM is used all through the demo. We just replace XLM with NGN in the view as it relates more with the scenario. 
+- 1 day is depicted as 100seconds. 
+- All tasks performed here can be done with custom assets
 
 
 ## Development server
