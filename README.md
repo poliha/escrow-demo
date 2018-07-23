@@ -6,7 +6,7 @@ To learn more about Stellar smart contracts, considerations in designing your co
 
 ## The Demo 
 
-Once you understand Stellar Smart Contracts conceptually, [check-out our interactive demo] (https://poliha.github.io/escrow-demo/) that walks you through creation of a 2-party escrow account with time lock and recovery. Though the premise of the demo is highly specific, it can easily be adapted for wider applications. The premise of the demo is as follows: 
+Once you understand Stellar Smart Contracts conceptually, [check-out our interactive demo](https://poliha.github.io/escrow-demo/) that walks you through creation of a 2-party escrow account with time lock and recovery. Though the premise of the demo is highly specific, it can easily be adapted for wider applications. The premise of the demo is as follows: 
 
  - Tunde would like to buy a car. 
  - A car dealer agrees to sell Tunde a car for 2 million NGN under the condition that the car dealer will return Tunde's funds if the car develops issues after 2 days. We call this the unlock period. 
