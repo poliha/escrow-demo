@@ -16,7 +16,7 @@ To solve the premise outlined above they decide to set up an escrow that will en
  - Funds will only be released after 2 days to car dealer.
  - Tunde can get his money back on the 3rd day if there are any issues.
  
- While the demo walkthroughs a contract with NGN, any token can be used. 
+ While the demo describes a contract with NGN, any token can be used. 
 
 ## How It Works
 
