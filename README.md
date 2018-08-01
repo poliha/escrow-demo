@@ -6,7 +6,7 @@ To learn more about Stellar smart contracts, considerations in designing your co
 
 ## The Demo 
 
-Once you understand Stellar Smart Contracts conceptually, [check-out our interactive demo](https://poliha.github.io/escrow-demo/) that walks you through creation of a 2-party escrow account with time lock and recovery. Though the premise of the demo is highly specific, it can easily be adapted for wider applications. The premise of the demo is as follows: 
+Once you understand Stellar Smart Contracts conceptually, [check-out our interactive demo](https://lightyeario.github.io/escrow-demo/) that walks you through creation of a 2-party escrow account with time lock and recovery. Though the premise of the demo is highly specific, it can easily be adapted for wider applications. The premise of the demo is as follows: 
 
  - Tunde would like to buy a car. 
  - A car dealer agrees to sell Tunde a car for 2 million NGN under the condition that the car dealer will return Tunde's funds if the car develops issues after 2 days. We call this the unlock period. 
@@ -35,17 +35,139 @@ The demo simulates the creation of a smart contract via a series of paramaters a
 
 In order to setup an escrow account using Stellar Smart Contracts you'll need to perform the following steps: 
 
-- Generate Keypairs: Generate Stellar public and private keypairs for each account.
+- Generate Keypairs: Generate Stellar public and private keypairs for each account. 
+
+```javascript
+const pair = StellarSdk.Keypair.random();
+    return { publicKey: pair.publicKey(), privateKey: pair.secret()};
+```
+
 - Create Accounts: Fund the accounts with their corresponding starting balances (in the demo, 10m NGN).
+
+```javascript
+   let transaction = new StellarSdk.TransactionBuilder(source)
+          .addOperation(StellarSdk.Operation.createAccount({
+            destination: srcAccount.publicKey,
+            startingBalance: amount
+          }))
+          .addMemo(StellarSdk.Memo.text('Test Transaction'))
+          .build();
+        transaction.sign(sourceKeys);
+        return horizonServer.submitTransaction(transaction);
+```
+
 - Parties Sign: Add the target account as a signer to the escrow accounts
+
+```javascript
+    let transaction = new StellarSdk.TransactionBuilder(source)
+            .addOperation(StellarSdk.Operation.setOptions({
+              masterWeight: 2, // masterweight is set to 2 here so it is still the only signature needed for adding another signer
+              lowThreshold: 2,
+              medThreshold: 2,
+              highThreshold: 2,
+              signer: { ed25519PublicKey: carDealerAccount.publicKey, weight: 1 }
+            }))
+            .addOperation(StellarSdk.Operation.setOptions({
+              medThreshold: 3,  // payments will need to be authorised by escrow and one other party
+              signer: { ed25519PublicKey: tundeAccount.publicKey, weight: 1 }
+            }))
+            .addMemo(StellarSdk.Memo.text('Test Transaction'))
+            .build();
+          transaction.sign(sourceKeys);
+          return horizonServer.submitTransaction(transaction);
+```
+
 - Start Hold Period: Builds the transaction to unlock the funds in the escrow. This transaction can only be submitted after the unlock time has passed.
+
+```javascript
+  let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.minimumUnlockTime, maxTime: this.maximumTime } })
+            .addOperation(StellarSdk.Operation.payment({
+              destination: carDealerAccount.publicKey,
+              asset: StellarSdk.Asset.native(),
+              amount:  this.escrowAmount
+            }))
+            .addOperation(StellarSdk.Operation.setOptions({
+              signer: { ed25519PublicKey: carDealerAccount.publicKey, weight: 0 }
+            }))
+            .addOperation(StellarSdk.Operation.setOptions({
+              masterWeight: 1, // revert to original state
+              lowThreshold: 0,
+              medThreshold: 0,
+              highThreshold: 0,
+              signer: { ed25519PublicKey: tundeAccount.publicKey, weight: 0 }
+            }))
+            .addMemo(StellarSdk.Memo.text('Test Transaction'));
+          // build and sign transactions but do not submit yet.
+          let builtTx = transaction.build();
+          builtTx.sign(escrowSourceKeys, destSourceKeys);
+          // Save as an XDR string
+          this.unlockXDR = builtTx.toEnvelope().toXDR().toString('base64');
+```
+
 - Start Refund Period: Builsd the transaction to recover the funds in the escrow if it remains unclaimed. This transaction can only be submitted after the recovery time has passed.
+
+```javascript
+  let transaction = new StellarSdk.TransactionBuilder(source, { timebounds: { minTime: this.minimumUnlockTime, maxTime: this.maximumTime } })
+            .addOperation(StellarSdk.Operation.payment({
+              destination: tundeAccount.publicKey,
+              asset: StellarSdk.Asset.native(),
+              amount:  this.escrowAmount
+            }))
+            .addOperation(StellarSdk.Operation.setOptions({
+              signer: { ed25519PublicKey: carDealerAccount.publicKey, weight: 0 }
+            }))
+            .addOperation(StellarSdk.Operation.setOptions({
+              masterWeight: 1, // revert to original state
+              lowThreshold: 0,
+              medThreshold: 0,
+              highThreshold: 0,
+              signer: { ed25519PublicKey: carDealerAccount.publicKey, weight: 0 }
+            }))
+            .addMemo(StellarSdk.Memo.text('Test Transaction'));
+          // build and sign transactions but do not submit yet.
+          let builtTx = transaction.build();
+          builtTx.sign(escrowSourceKeys, destSourceKeys);
+          // Save as an XDR string
+          this.recoveryXDR = builtTx.toEnvelope().toXDR().toString('base64');
+```
+
 - Fund Escrow: Sends the funds to the escrow account. Can be done multiple times.
+
+```javascript
+    let transaction = new StellarSdk.TransactionBuilder(source)
+        .addOperation(StellarSdk.Operation.payment({
+          destination: this.escrowAccount.publicKey,
+          asset: StellarSdk.Asset.native(),
+          amount: this.escrowAmount
+        }))
+        .addMemo(StellarSdk.Memo.text('Test Transaction'))
+        .build();
+      transaction.sign(sourceKeys);
+      return horizonServer.submitTransaction(transaction);
+
+```
+
 - Unlock Funds: Runs the unlock transaction built previously.
+
+```javascript
+    // build transaction from saved xdr string
+    const transaction = new StellarSdk.Transaction(unlockXDR);
+      // submit transaction to network
+      return horizonServer.submitTransaction(transaction)
+```
+
 - Recover Funds: Run the recovery transaction built previously.
 
+```javascript
+    // build transaction from saved xdr string
+    const transaction = new StellarSdk.Transaction(recoveryXDR);
+      // submit transaction to network
+      return horizonServer.submitTransaction(transaction)
+```
+
 The following step can be performed by escrow manager, if strictly necessary.
-- Raise Dispute: Stop the smart contract if any issues, then:
+- Raise Dispute: Stop the smart contract if any issues. This removes Tunde and the Car dealer as signers.
+Then:
   - Pay Tunde: Refund the buyer
   - Pay Car dealer: Release escrow funds to seller
 

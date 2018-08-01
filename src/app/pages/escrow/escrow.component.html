@@ -4,17 +4,10 @@
   <div class="row">
     <div class="col-sm-3" style="height: 90vh; overflow-y: scroll;">
       <h4>Demo Control</h4>
-      <p>Starting Balance:
-        <strong>NGN {{ startingBalance | number:'1.2' }}m</strong>
-      </p>
-      <!-- <p>Escrow Balance:
-        <strong>NGN {{escrowStartingBalance | number:'1.2'}}m </strong>
-      </p> -->
-      <p>Escrow Amount:
-        <strong>NGN {{escrowAmount | number:'1.2'}}m</strong>
-      </p>
-
       <form class="form-inline" #escrowForm="ngForm">
+        <label>Asset Code</label>
+        <input type="text" class="form-control mb-2 mr-sm-2" placeholder="" [(ngModel)]="assetCode" name="assetCode" maxlength="12"
+          ngModel>
         <label>Unlock After (sec)</label>
         <input type="text" class="form-control mb-2 mr-sm-2" placeholder="Unlock Period in Seconds" [(ngModel)]="unlockAfter" name="unlockAfter"
           ngModel>
@@ -25,54 +18,59 @@
           <input type="checkbox" class="custom-control-input" id="customCheck1" name="automateProcess" [(ngModel)]="automateProcess">
           <label class="custom-control-label" for="customCheck1">Automate escrow release</label>
         </div>
-
-
-        <!-- <button type="submit" class="btn btn-primary mb-2">Start Contract</button> -->
-
       </form>
+
+      <p>Starting Balance:
+        <strong>{{assetCode}} {{ startingBalance | number:'1.2' }}m</strong>
+      </p>
+      <p>Escrow Amount:
+        <strong>{{assetCode}} {{escrowAmount | number:'1.2'}}m</strong>
+      </p>
+
+
       <hr>
-      <h5>Tasks</h5>
-      <div class="list-group">
-        <button type="button" class="list-group-item list-group-item-action" (click)="generateAll()">
+      <h5>Tasks {{ progressCounter != 8 ? 'Pending' : 'Completed' }}</h5>
+      <div class="list-group" [ngSwitch]="progressCounter">
+        <button *ngSwitchCase="0" type="button" class="list-group-item list-group-item-action" (click)="generateAll()">
           Generate Keypairs
           <img *ngIf="tasks.generateKeypairs.active" src="assets/loader.gif">
           <span *ngIf="tasks.generateKeypairs.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.generateKeypairs.status, 'badge-danger':!tasks.generateKeypairs.status}">
             {{ tasks.generateKeypairs.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="createAccounts()">Create Accounts
+        <button *ngSwitchCase="1" type="button" class="list-group-item list-group-item-action" (click)="createAccounts()">Create Accounts
           <img *ngIf="tasks.createAccounts.active" src="assets/loader.gif">
           <span *ngIf="tasks.createAccounts.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.createAccounts.status, 'badge-danger':!tasks.createAccounts.status}">
             {{ tasks.createAccounts.status ? 'Complete' : 'Error' }}
           </span>
 
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="enableMultisig()">Parties Sign
+        <button *ngSwitchCase="2" type="button" class="list-group-item list-group-item-action" (click)="enableMultisig()">Parties Sign
           <img *ngIf="tasks.enableMultisig.active" src="assets/loader.gif">
           <span *ngIf="tasks.enableMultisig.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.enableMultisig.status, 'badge-danger':!tasks.enableMultisig.status}">
             {{ tasks.enableMultisig.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="unlockProcess()">Start Hold Period
+        <button *ngSwitchCase="3" type="button" class="list-group-item list-group-item-action" (click)="unlockProcess()">Start Hold Period
           <img *ngIf="tasks.buildUnlock.active" src="assets/loader.gif">
           <span *ngIf="tasks.buildUnlock.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.buildUnlock.status, 'badge-danger':!tasks.buildUnlock.status}">
             {{ tasks.buildUnlock.status ? 'Complete' : 'Error' }}
           </span>
 
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="recoveryProcess()">Start Refund Period
+        <button *ngSwitchCase="4" type="button" class="list-group-item list-group-item-action" (click)="recoveryProcess()">Start Refund Period
           <img *ngIf="tasks.buildRecovery.active" src="assets/loader.gif">
           <span *ngIf="tasks.buildRecovery.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.buildRecovery.status, 'badge-danger':!tasks.buildRecovery.status}">
             {{ tasks.buildRecovery.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="fundEscrow()">Fund Escrow
+        <button *ngSwitchCase="5" type="button" class="list-group-item list-group-item-action" (click)="fundEscrow()">Fund Escrow
           <img *ngIf="tasks.fundEscrow.active" src="assets/loader.gif">
           <span *ngIf="tasks.fundEscrow.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.fundEscrow.status, 'badge-danger':!tasks.fundEscrow.status}">
             {{ tasks.fundEscrow.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="runUnlockTx()">Unlock Funds
+        <button *ngSwitchCase="6" type="button" class="list-group-item list-group-item-action" (click)="runUnlockTx()">Unlock Funds
           <img *ngIf="tasks.runUnlock.active" src="assets/loader.gif">
           <span *ngIf="tasks.runUnlock.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.runUnlock.status, 'badge-danger':!tasks.runUnlock.status}">
             {{ tasks.runUnlock.status ? 'Complete' : 'Error' }}
@@ -82,7 +80,7 @@
           </span>
 
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="runRecoveryTx()">Recover Funds
+        <button *ngSwitchCase="6" type="button" class="list-group-item list-group-item-action" (click)="runRecoveryTx()">Recover Funds
           <img *ngIf="tasks.runRecovery.active" src="assets/loader.gif">
           <span *ngIf="tasks.runRecovery.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.runRecovery.status, 'badge-danger':!tasks.runRecovery.status}">
             {{ tasks.runRecovery.status ? 'Complete' : 'Error' }}
@@ -91,7 +89,7 @@
             {{recoverAfter}}s
           </span>
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="raiseDispute()">Raise Dispute
+        <button *ngSwitchCase="6" type="button" class="list-group-item list-group-item-action" (click)="raiseDispute()">Raise Dispute
           <img *ngIf="tasks.raiseDispute.active" src="assets/loader.gif">
           <span *ngIf="tasks.raiseDispute.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.raiseDispute.status, 'badge-danger':!tasks.raiseDispute.status}">
             {{ tasks.raiseDispute.status ? 'Complete' : 'Error' }}
@@ -99,48 +97,43 @@
         </button>
       </div>
       <br>
-      <div class="list-group" *ngIf="tasks.raiseDispute.status">
-<h6 class="text-info">
-  <b>Tasks for Escrow Manager</b>
-</h6>
-        <button type="button" class="list-group-item list-group-item-action" (click)="paySource()">Pay Tunde
+      <div class="list-group" *ngIf="tasks.raiseDispute.status" [ngSwitch]="progressCounter">
+        <h6 class="text-info">
+          <b>Tasks for Escrow Manager</b>
+        </h6>
+        <button *ngSwitchCase="7" type="button" class="list-group-item list-group-item-action" (click)="paySource()">Pay Tunde
           <img *ngIf="tasks.paySource.active" src="assets/loader.gif">
           <span *ngIf="tasks.paySource.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.paySource.status, 'badge-danger':!tasks.paySource.status}">
             {{ tasks.paySource.status ? 'Complete' : 'Error' }}
           </span>
         </button>
-        <button type="button" class="list-group-item list-group-item-action" (click)="payTarget()">Pay Car Dealer
+        <button *ngSwitchCase="7" type="button" class="list-group-item list-group-item-action" (click)="payTarget()">Pay Car Dealer
           <img *ngIf="tasks.payTarget.active" src="assets/loader.gif">
           <span *ngIf="tasks.payTarget.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.payTarget.status, 'badge-danger':!tasks.payTarget.status}">
             {{ tasks.payTarget.status ? 'Complete' : 'Error' }}
           </span>
         </button>
+        <!-- <button *ngSwitchCase="8" type="button" class="list-group-item list-group-item-action">
+          Demo Completed!!
+
+        </button> -->
       </div>
-
-      <!-- <hr>
-      <h6>Logs</h6>
-
-      <ul class="list-group">
-        <li class="list-group-item" *ngFor="let item of logs.slice().reverse(); let i = index; first as isFirst" [ngClass]="{'isFirst': isFirst, 'isLast': !isFirst}">
-          {{ item }}
-        </li>
-      </ul> -->
 
     </div>
     <div class="col-sm-3">
       <br>
       <h4>Tunde's Account</h4>
-      <app-account-detail [publicKey]="srcAccount.publicKey" [fedName]="srcAccount.fedName"></app-account-detail>
+      <app-account-detail [publicKey]="srcAccount.publicKey" [fedName]="srcAccount.fedName" [assetCode]="assetCode"></app-account-detail>
     </div>
     <div class="col-sm-3">
       <br>
       <h4>Escrow Account</h4>
-      <app-account-detail [publicKey]="escrowAccount.publicKey" [fedName]="escrowAccount.fedName"></app-account-detail>
+      <app-account-detail [publicKey]="escrowAccount.publicKey" [fedName]="escrowAccount.fedName" [assetCode]="assetCode"></app-account-detail>
     </div>
     <div class="col-sm-3">
       <br>
       <h4>Car Dealer Account</h4>
-      <app-account-detail [publicKey]="destAccount.publicKey" [fedName]="destAccount.fedName"></app-account-detail>
+      <app-account-detail [publicKey]="destAccount.publicKey" [fedName]="destAccount.fedName" [assetCode]="assetCode"></app-account-detail>
     </div>
   </div>
 </div>

@@ -2,8 +2,8 @@
   <h5 class="my-0 mr-md-auto font-weight-normal">Two-Party Escrow</h5>
   <nav class="my-2 my-md-0 mr-md-3">
     <a class="p-2 text-white" href="#">Intro</a>
-    <a class="p-2 text-white" href="#instructions">Instructions</a>
     <a class="p-2 text-white" href="#escrow">Demo</a>
+    <a class="p-2 text-white" href="https://github.com/lightyeario/escrow-demo" target="_blank">Github repo</a>
   </nav>
 </div>
 <br>
@@ -12,7 +12,8 @@
   <div class="jumbotron">
     <div class="container">
       <h2 class="display-3">The Scenario:</h2>
-      <p> A car dealer sells Tunde a car for 2m NGN. Tunde does not trust the car dealer so he decides to pay the car dealer 2 days after purchasing the car, if there are no issues. 
+      <p> A car dealer sells Tunde a car for 2m NGN. Tunde does not trust the car dealer so he decides to pay the car dealer
+        2 days after purchasing the car, if there are no issues.
       </p>
       <p> To solve this issue, Tunde and the car dealer set up an escrow that ensures: </p>
       <ul>
@@ -21,83 +22,12 @@
       </ul>
       <p>These can be achieved through a smart contract. Let's walk through the parameters and steps below. </p>
       <p>
-        <a class="btn btn-primary btn-lg" href="#instructions" role="button">Next &raquo;</a>
+        <a class="btn btn-primary btn-lg" href="#escrow" role="button">Next &raquo;</a>
       </p>
     </div>
   </div>
 </div>
-<br>
-<br>
-<div class="" id="instructions">
-  <div class="jumbotron">
-    <div class="container">
-      <h1 class="display-3">How it Works!</h1>
-      <p>Next, we will see a demo that simulates this smart contract. The demo page consists of 4 vertical sections. The first,
-        controls the demo and shows its tasks. The bottom bar gives the status of the accounts at each point in time.</p>
-      <h5>
-        Things to Note:
-      </h5>
-      <ul>
-        <li>
-          <b>Starting balance:</b> This is the balance for all accounts(Tunde, Escrow and Car dealer).
-        </li>
-        <li>
-          <b>Escrow Amount:</b> This is the amount that the source account funds the escrow account with
-        </li>
-        <li>
-          <b>Unlock After:</b> The amount of seconds before the funds in escrow can be unlocked for the target account
-        </li>
-        <li>
-          <b>Recover After:</b> The amount of seconds after which the funds in the escrow account is sent back to the source account if it is unclaimed.
-        </li>
-        <li>
-          <b>Automate escrow release: </b> If selected, once the ulock period has elapsed, the funds are released
-        </li>
 
-      </ul>
-
-      <h5>Tasks</h5>
-      <p>The following tasks will be performed</p>
-      <ul>
-
-        <li>
-          <b> Generate Keypairs:</b> Generate Stellar public and private keypairs for each account.
-        </li>
-        <li>
-          <b>Create Accounts:</b> Fund the accounts with their corresponding starting balances.</li>
-        <li>
-          <b>Parties Sign:</b> Add target account as a signer to the escrow accounts.</li>
-        <li>
-          <b>Start Hold Period:</b> Build the transaction to unlock the funds in the escrow. Note this transaction can
-          only be submitted after the unlock time has passed.</li>
-        <li>
-          <b>Start Refund Period:</b> Build the transaction to recover the funds in the escrow if it remains unclaimed.
-          Note this transaction can only be submitted after the recovery time has passed.</li>
-        <li>
-          <b>Fund Escrow:</b> Send funds to the escrow account. Can be done multiple times.</li>
-        <li>
-          <b>Unlock Funds:</b> Run the unlock transaction built above</li>
-        <li>
-          <b>Recover Funds:</b> Run the recovery transaction built above</li>
-        <li>Tasks below to be performed by escrow manager</li>
-        <li>
-          <b>Raise Dispute:</b> Stop the smart contract if any issues, then:
-          <ul>
-            <li>
-              <b>Pay Tunde: </b> Refund the buyer</li>
-            <li>
-              <b>Pay Car dealer: </b> Release escrow funds to seller</li>
-          </ul>
-        </li>
-
-      </ul>
-      <p>
-        <a class="btn btn-primary btn-lg" href="#escrow" role="button">Start Demo &raquo;</a>
-      </p>
-    </div>
-  </div>
-
-</div>
 <br>
 <br>
 

@@ -10,6 +10,7 @@ export class AccountDetailComponent implements OnInit{
 
   @Input() publicKey: string;
   @Input() fedName: string;
+  @Input() assetCode: string;
 
   account: any;
   componentInterval: any;
