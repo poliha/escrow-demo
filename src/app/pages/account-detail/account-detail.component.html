@@ -1,7 +1,7 @@
 <div class="card">
   <h6 *ngIf="publicKey && fedName" class="card-title font-weight-bold text-secondary">{{fedName}}</h6>
   <small *ngIf="publicKey && fedName">
-    <a href="#escrow">{{publicKey}}</a>
+    <a href="https://stellar.expert/explorer/testnet/account/{{publicKey}}" target="_blank">{{publicKey}}</a>
   </small>
   <div *ngIf="account && publicKey" class="card-body">
     <ul class="list-group">
@@ -18,7 +18,7 @@
   <div *ngIf="account && publicKey" class="card-body">
     <h6 class="card-title">Actions on Account</h6>
     <ul class="list-group">
-<li class="list-group-item" *ngFor="let e of effects; first as isFirst" [ngClass]="{'isFirst bg-info': isFirst, 'isLast': !isFirst}">
+      <li class="list-group-item" *ngFor="let e of effects; first as isFirst" [ngClass]="{'isFirst bg-info': isFirst, 'isLast': !isFirst}">
         {{ e.type }}
       </li>
     </ul>
