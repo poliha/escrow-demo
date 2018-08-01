@@ -30,6 +30,8 @@ export class EscrowComponent implements OnInit {
     privateKey: '',
     fedName: 'escrow*stellar.org'
   };
+
+  assetCode = 'NGN';
   startingBalance = '10';
   escrowAmount = '2';
   escrowStartingBalance = '3';

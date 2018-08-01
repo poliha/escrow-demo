@@ -4,17 +4,10 @@
   <div class="row">
     <div class="col-sm-3" style="height: 90vh; overflow-y: scroll;">
       <h4>Demo Control</h4>
-      <p>Starting Balance:
-        <strong>NGN {{ startingBalance | number:'1.2' }}m</strong>
-      </p>
-      <!-- <p>Escrow Balance:
-        <strong>NGN {{escrowStartingBalance | number:'1.2'}}m </strong>
-      </p> -->
-      <p>Escrow Amount:
-        <strong>NGN {{escrowAmount | number:'1.2'}}m</strong>
-      </p>
-
       <form class="form-inline" #escrowForm="ngForm">
+        <label>Asset Code</label>
+        <input type="text" class="form-control mb-2 mr-sm-2" placeholder="" [(ngModel)]="assetCode" name="assetCode" maxlength="12"
+          ngModel>
         <label>Unlock After (sec)</label>
         <input type="text" class="form-control mb-2 mr-sm-2" placeholder="Unlock Period in Seconds" [(ngModel)]="unlockAfter" name="unlockAfter"
           ngModel>
@@ -25,11 +18,16 @@
           <input type="checkbox" class="custom-control-input" id="customCheck1" name="automateProcess" [(ngModel)]="automateProcess">
           <label class="custom-control-label" for="customCheck1">Automate escrow release</label>
         </div>
-
-
-        <!-- <button type="submit" class="btn btn-primary mb-2">Start Contract</button> -->
-
       </form>
+
+      <p>Starting Balance:
+        <strong>{{assetCode}} {{ startingBalance | number:'1.2' }}m</strong>
+      </p>
+      <p>Escrow Amount:
+        <strong>{{assetCode}} {{escrowAmount | number:'1.2'}}m</strong>
+      </p>
+
+
       <hr>
       <h5>Tasks</h5>
       <div class="list-group">
@@ -100,9 +98,9 @@
       </div>
       <br>
       <div class="list-group" *ngIf="tasks.raiseDispute.status">
-<h6 class="text-info">
-  <b>Tasks for Escrow Manager</b>
-</h6>
+        <h6 class="text-info">
+          <b>Tasks for Escrow Manager</b>
+        </h6>
         <button type="button" class="list-group-item list-group-item-action" (click)="paySource()">Pay Tunde
           <img *ngIf="tasks.paySource.active" src="assets/loader.gif">
           <span *ngIf="tasks.paySource.completed" class="badge badge-pill" [ngClass]="{'badge-success': tasks.paySource.status, 'badge-danger':!tasks.paySource.status}">
@@ -130,17 +128,17 @@
     <div class="col-sm-3">
       <br>
       <h4>Tunde's Account</h4>
-      <app-account-detail [publicKey]="srcAccount.publicKey" [fedName]="srcAccount.fedName"></app-account-detail>
+      <app-account-detail [publicKey]="srcAccount.publicKey" [fedName]="srcAccount.fedName" [assetCode]="assetCode"></app-account-detail>
     </div>
     <div class="col-sm-3">
       <br>
       <h4>Escrow Account</h4>
-      <app-account-detail [publicKey]="escrowAccount.publicKey" [fedName]="escrowAccount.fedName"></app-account-detail>
+      <app-account-detail [publicKey]="escrowAccount.publicKey" [fedName]="escrowAccount.fedName" [assetCode]="assetCode"></app-account-detail>
     </div>
     <div class="col-sm-3">
       <br>
       <h4>Car Dealer Account</h4>
-      <app-account-detail [publicKey]="destAccount.publicKey" [fedName]="destAccount.fedName"></app-account-detail>
+      <app-account-detail [publicKey]="destAccount.publicKey" [fedName]="destAccount.fedName" [assetCode]="assetCode"></app-account-detail>
     </div>
   </div>
 </div>
