@@ -47,6 +47,7 @@ export class EscrowComponent implements OnInit {
   recoveryInterval: any;
   currentTime: any;
   automateProcess = false;
+  progressCounter = 0;
 
   tasks = {
     generateKeypairs: { active: false, status: false, completed: false },
@@ -94,6 +95,7 @@ export class EscrowComponent implements OnInit {
       this.tasks.generateKeypairs.status = true;
       this.tasks.generateKeypairs.active = false;
       this.tasks.generateKeypairs.completed = true;
+      this.progressCounter = 1;
     } catch (error) {
       this.tasks.generateKeypairs.status = false;
       this.tasks.generateKeypairs.active = false;
@@ -138,6 +140,7 @@ export class EscrowComponent implements OnInit {
         this.tasks.createAccounts.completed = true;
         this.tasks.createAccounts.status = true;
         this.logs.push('Create accounts success');
+        this.progressCounter = 2;
         return Promise.resolve('Success');
       })
       .catch((error) => {
@@ -187,6 +190,7 @@ export class EscrowComponent implements OnInit {
           this.tasks.enableMultisig.active = false;
           this.tasks.enableMultisig.completed = true;
           this.logs.push('Multisig enabled');
+          this.progressCounter = 3;
           return Promise.resolve('success');
         })
         .catch((error) => {
@@ -258,6 +262,7 @@ export class EscrowComponent implements OnInit {
           this.tasks.raiseDispute.active = false;
           this.tasks.raiseDispute.completed = true;
           this.logs.push('Dispute raised: manual action required');
+          this.progressCounter = 7;
           return Promise.resolve('success');
         })
         .catch((error) => {
@@ -384,6 +389,7 @@ export class EscrowComponent implements OnInit {
           this.tasks.buildUnlock.active = false;
           this.tasks.buildUnlock.completed = true;
           this.logs.push('Building Unlock Transaction Successful');
+          this.progressCounter = 4;
           return Promise.resolve('success');
         })
         .catch((error) => {
@@ -456,6 +462,7 @@ export class EscrowComponent implements OnInit {
           this.tasks.buildRecovery.active = false;
           this.tasks.buildRecovery.completed = true;
           this.logs.push('Building Recovery Transaction Success');
+          this.progressCounter = 5;
           return Promise.resolve('success');
         })
         .catch((error) => {
@@ -510,6 +517,7 @@ export class EscrowComponent implements OnInit {
           this.tasks.fundEscrow.completed = true;
           this.logs.push('Funding Escrow Success');
           this.totalSent = this.totalSent + Number(this.escrowAmount);
+          this.progressCounter = 6;
           return Promise.resolve('success');
         })
         .catch((error) => {
@@ -551,6 +559,7 @@ export class EscrowComponent implements OnInit {
         this.tasks.runUnlock.completed = true;
         this.tasks.runUnlock.status = true;
         this.logs.push('Funds Unlocked');
+        this.progressCounter = 8;
 
       } else {
         this.logs.push('Unlock period in not yet active, cant claim funds');
@@ -588,6 +597,7 @@ export class EscrowComponent implements OnInit {
         this.tasks.runRecovery.completed = true;
         this.tasks.runRecovery.status = true;
         this.logs.push('Funds Recovered');
+        this.progressCounter = 8;
       } else {
         this.logs.push('Recovery period in not yet active, cant claim funds');
         this.tasks.runRecovery.active = false;
@@ -681,6 +691,7 @@ export class EscrowComponent implements OnInit {
         this.tasks.paySource.completed = true;
         this.tasks.paySource.status = true;
         this.logs.push('Funds returned to Tunde');
+        this.progressCounter = 8;
       } else {
         this.logs.push('Dispute not raised, please wait for recovery period to claim funds');
         this.tasks.paySource.active = false;
@@ -716,6 +727,7 @@ export class EscrowComponent implements OnInit {
         this.tasks.payTarget.completed = true;
         this.tasks.payTarget.status = true;
         this.logs.push('Funds released to Car Dealer');
+        this.progressCounter = 8;
       } else {
         this.logs.push('Dispute not raised, please wait for unlock period to claim funds');
         this.tasks.payTarget.active = false;
